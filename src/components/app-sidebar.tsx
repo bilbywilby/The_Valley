@@ -40,10 +40,10 @@ export function AppSidebar(): JSX.Element {
     }
   };
   return (
-    <Sidebar className="!bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl !border-r !border-white/20 shadow-glass">
-      <SidebarHeader className="backdrop-blur-none bg-gradient-to-r from-indigo-600 to-purple-600/90 shadow-glow-lg">
-        <div className="flex items-center gap-2 px-2 py-1">
-          <Rss className="h-6 w-6 text-white animate-glow" />
+    <Sidebar className="!bg-white/90 dark:bg-slate-800/80 backdrop-blur-sm !border-r border-gray-200/50 shadow-md">
+      <SidebarHeader className="bg-gradient-to-r from-indigo-600 to-purple-600 shadow-md p-3">
+        <div className="flex items-center gap-2">
+          <Rss className="h-6 w-6 text-white" />
           <span className="text-sm font-display text-white">Feed Categories</span>
         </div>
       </SidebarHeader>
@@ -53,13 +53,13 @@ export function AppSidebar(): JSX.Element {
             const Icon = categoryIcons[category] || Rss;
             return (
               <SidebarMenuItem key={category}>
-                <SidebarMenuButton asChild className="group hover:scale-[1.02] hover:shadow-glow active:scale-[0.98] transition-all duration-150 backdrop-blur hover:bg-white/60 hover:backdrop-blur-lg hover:shadow-inner">
+                <SidebarMenuButton asChild className="group hover:bg-accent/50 hover:shadow-sm hover:scale-105 transition-all duration-150">
                   <a href={`#${category.replace(/\s+/g, '-').toLowerCase()}`} onClick={(e) => scrollToCategory(e, category)}>
                     <Icon className="w-4 h-4 group-hover:scale-110 transition-transform" />
                     <span className="font-semibold">{category}</span>
                   </a>
                 </SidebarMenuButton>
-                <SidebarMenuBadge className="transition-transform group-hover:scale-110 animate-pulse-slow">{categorizedFeeds[category].length}</SidebarMenuBadge>
+                <SidebarMenuBadge className="animate-pulse">{categorizedFeeds[category].length}</SidebarMenuBadge>
               </SidebarMenuItem>
             );
           })}
