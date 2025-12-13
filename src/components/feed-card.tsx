@@ -16,7 +16,7 @@ const HighlightedText = React.memo(({ text, highlight }: { text: string; highlig
   if (!highlight || !highlight.trim()) {
     return <span>{text}</span>;
   }
-  const regex = new RegExp(`(${highlight.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
+const regex = new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'i');
   const parts = text.split(regex);
   return (
     <span>
