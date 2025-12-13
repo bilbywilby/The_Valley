@@ -89,21 +89,6 @@
   }
 }
 @layer components {
-  /* Button System */
-  .btn {
-    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50;
-  }
-  .btn-gradient {
-    @apply btn text-white shadow-primary hover:shadow-glow hover:scale-105 active:scale-95;
-    background: linear-gradient(135deg, #F38020 0%, #E55A1B 100%);
-  }
-  /* Gradient System */
-  .bg-gradient-primary {
-    background: linear-gradient(135deg, #F38020 0%, #E55A1B 50%, #D14615 100%);
-  }
-  .bg-gradient-rainbow {
-    background: linear-gradient(135deg, #F38020 0%, #E55A1B 25%, #D14615 50%, #ff6b35 100%);
-  }
   /* Text System */
   .text-gradient {
     @apply bg-gradient-to-r from-indigo-500 via-purple-600 to-emerald-500 bg-clip-text text-transparent;
@@ -111,39 +96,14 @@
   .text-pretty {
     text-wrap: pretty;
   }
-  /* Glass Morphism */
+  /* Glass Morphism (Simplified) */
   .glass {
-    @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-glass;
-  }
-  .glass-hero {
-    @apply backdrop-blur-xl bg-white/10 border-white/20 shadow-glass;
+    @apply bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm;
   }
   .glass-dark {
-    @apply bg-black/10 backdrop-blur-md border border-white/10 shadow-glass;
+    @apply bg-black/10 backdrop-blur-sm border border-white/10 shadow-sm;
   }
   /* Interactive Effects */
-  .floating {
-    animation: float 2s ease-in-out infinite;
-  }
-  .rotating {
-    animation: rotate 2s ease-in-out infinite;
-  }
-  @keyframes float {
-    0%, 100% {
-      transform: translateY(-4px);
-    }
-    50% {
-      transform: translateY(4px);
-    }
-  }
-  @keyframes rotate {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
-  }
   .shimmer-bg {
     @apply relative overflow-hidden;
   }
@@ -160,32 +120,9 @@
   }
   /* Responsive Typography */
   .text-display {
-    @apply text-5xl sm:text-6xl md:text-7xl font-display font-bold leading-tight;
+    @apply text-4xl sm:text-5xl font-display font-bold leading-tight;
   }
   .text-body {
     @apply text-base sm:text-lg text-muted-foreground leading-relaxed;
-  }
-}
-@layer utilities {
-  @keyframes float-slow {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
-  }
-  @keyframes glow-pulse {
-    0%, 100% { @apply shadow-glow; }
-    50% { @apply shadow-glow-lg; }
-  }
-  @keyframes rotate-glow {
-    0% { transform: rotate(0deg); @apply shadow-glow; }
-    100% { transform: rotate(360deg); @apply shadow-glow-lg; }
-  }
-  .animate-float-slow {
-    animation: float-slow 4s ease-in-out infinite;
-  }
-  .animate-glow-pulse {
-    animation: glow-pulse 3s ease-in-out infinite;
-  }
-  .animate-rotate-glow {
-    animation: rotate-glow 4s linear infinite;
   }
 }

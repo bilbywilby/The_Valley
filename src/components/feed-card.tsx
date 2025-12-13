@@ -26,20 +26,20 @@ export function FeedCard({ feed }: FeedCardProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.2 }}
       className="h-full"
     >
-      <Card className="group flex flex-col h-full backdrop-blur-md bg-white/60 dark:bg-slate-800/50 border border-white/20 shadow-glass hover:shadow-glow-lg hover:-translate-y-2 transition-all duration-300 hover:scale-[1.02]">
+      <Card className="group flex flex-col h-full backdrop-blur-sm bg-white/90 dark:bg-slate-800/80 border border-gray-200/50 shadow-sm hover:shadow-md hover:-translate-y-1 hover:scale-105 transition-all duration-300">
         <CardContent className="p-4 flex flex-col flex-grow">
-          <p className="text-lg font-display font-semibold text-foreground mb-1 flex-grow">{feed.title}</p>
+          <p className="text-base font-semibold text-foreground mb-2 flex-grow">{feed.title}</p>
           <p className="text-xs text-muted-foreground truncate mb-4">{feed.url}</p>
           <Button
             onClick={handleCopy}
             size="sm"
-            className={`w-full mt-auto group transition-all duration-200 hover:scale-105 active:scale-95 group-hover:rotate-1 ${
+            className={`w-full mt-auto group transition-all duration-200 hover:scale-105 active:scale-95 ${
               copied
                 ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white"
-                : "bg-gradient-to-r from-indigo-600 via-purple-600 to-emerald-500 hover:from-indigo-700 hover:via-purple-700 hover:to-emerald-600 text-white shadow-glow hover:shadow-glow-lg"
+                : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md"
             }`}
           >
             {copied ? (
