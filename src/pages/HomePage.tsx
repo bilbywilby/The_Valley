@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Download, Search, Info, X } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { categorizedFeeds } from "@/data/feeds";
 import { FeedCard } from "@/components/feed-card";
 import { generateAndDownloadOpml } from "@/lib/opml-generator";
@@ -16,6 +18,8 @@ const LazySection = ({ category, feeds, searchQuery, isFavorite, onToggleFavorit
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -25,12 +29,10 @@ const LazySection = ({ category, feeds, searchQuery, isFavorite, onToggleFavorit
       },
       { rootMargin: "0px 0px -100px 0px" }
     );
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
+    observer.observe(element);
     return () => {
-      if (ref.current) {
-        observer.unobserve(ref.current);
+      if (element) {
+        observer.unobserve(element);
       }
     };
   }, []);
@@ -50,7 +52,22 @@ const LazySection = ({ category, feeds, searchQuery, isFavorite, onToggleFavorit
       <h2 className="text-3xl md:text-4xl font-display font-bold text-indigo-700 dark:text-indigo-400 border-b border-indigo-100 dark:border-indigo-900 pb-3 mb-6">
         {category}
       </h2>
-      {isVisible && (
+      {!isVisible ? (
+        <div className="grid gap-6 md:gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Card key={index} className="flex flex-col h-full bg-white/90 dark:bg-slate-800/80 border-gray-200/50 dark:border-slate-700/50">
+              <CardContent className="p-4 flex flex-col flex-grow">
+                <Skeleton className="h-6 w-4/5 mb-2" />
+                <Skeleton className="h-4 w-full mb-4" />
+                <div className="mt-auto flex items-center gap-2">
+                  <Skeleton className="h-9 w-9 rounded-md" />
+                  <Skeleton className="h-9 w-full rounded-md" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
         <motion.div
           className="grid gap-6 md:gap-8 sm:grid-cols-2 lg:grid-cols-3"
           variants={containerVariants}
@@ -79,6 +96,8 @@ export function HomePage() {
   const isFavorite = useFavoritesStore(state => state.isFavorite);
   const toggleFavorite = useFavoritesStore(state => state.toggleFavorite);
   const getFavoriteFeeds = useFavoritesStore(state => state.getFavoriteFeeds);
+  const boundIsFavorite = useCallback((url: string) => isFavorite(url), [isFavorite]);
+  const boundToggleFavorite = useCallback((url: string) => toggleFavorite(url), [toggleFavorite]);
   const filteredFeeds = useMemo(() => {
     const sourceFeeds = showFavoritesOnly ? { "Favorites": getFavoriteFeeds() } : categorizedFeeds;
     if (!searchQuery.trim()) {
@@ -97,17 +116,20 @@ export function HomePage() {
       }
     }
     return filtered;
-  }, [searchQuery, showFavoritesOnly, favoriteUrls]);
+  }, [searchQuery, showFavoritesOnly, favoriteUrls, getFavoriteFeeds]);
   const totalFeeds = useMemo(() => Object.values(categorizedFeeds).flat().length, []);
   const searchResultCount = useMemo(() => Object.values(filteredFeeds).flat().length, [filteredFeeds]);
-  const handleClearSearch = () => {
+  const handleClearSearch = useCallback(() => {
     setSearchQuery("");
     searchInputRef.current?.focus();
-  };
+  }, []);
   return (
     <AppLayout>
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-2 focus:left-2 focus:bg-white dark:focus:bg-slate-800 focus:p-2 focus:rounded-md focus:ring-2 focus:ring-indigo-500">
+        Skip to main content
+      </a>
       <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <main id="main-content" role="main" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-12 md:py-16">
             <header className="text-center mb-10 animate-fade-in backdrop-blur-sm bg-white/80 dark:bg-slate-800/70 border border-gray-200/50 dark:border-slate-700/50 rounded-2xl p-6 md:p-8 shadow-md">
               <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-gray-100 mb-2 tracking-tight">
@@ -119,7 +141,7 @@ export function HomePage() {
               <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
                  <Button
                     onClick={generateAndDownloadOpml}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500"
                     size="lg"
                   >
                     <Download className="mr-2 h-5 w-5" />
@@ -133,7 +155,7 @@ export function HomePage() {
                 </p>
               </div>
             </header>
-            <div id="search-section" className="sticky top-4 z-50 mb-10">
+            <div id="search-section" role="search" className="sticky top-4 z-50 mb-10">
               <div className="relative max-w-2xl mx-auto backdrop-blur-sm bg-white/90 dark:bg-slate-800/80 border border-gray-200/50 dark:border-slate-700/50 rounded-2xl shadow-lg p-2">
                  <div className="relative">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -144,9 +166,10 @@ export function HomePage() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-12 pr-10 py-3 h-12 text-base rounded-xl bg-transparent border-none focus:ring-2 focus:ring-indigo-500"
+                        aria-label="Search feeds"
                     />
                     {searchQuery.length > 0 && (
-                        <Button onClick={handleClearSearch} variant="ghost" size="sm" className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full p-0">
+                        <Button onClick={handleClearSearch} variant="ghost" size="sm" className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full p-0 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500" aria-label="Clear search">
                             <X className="h-4 w-4" />
                         </Button>
                     )}
@@ -163,7 +186,7 @@ export function HomePage() {
               )}
             </div>
             <div className="space-y-16 md:space-y-24">
-              <AnimatePresence>
+              <AnimatePresence mode="wait">
                 {Object.keys(filteredFeeds).length > 0 ? (
                   Object.entries(filteredFeeds).map(([category, feeds]) => (
                     <LazySection
@@ -171,8 +194,8 @@ export function HomePage() {
                       category={category}
                       feeds={feeds}
                       searchQuery={searchQuery}
-                      isFavorite={isFavorite}
-                      onToggleFavorite={toggleFavorite}
+                      isFavorite={boundIsFavorite}
+                      onToggleFavorite={boundToggleFavorite}
                     />
                   ))
                 ) : (

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useCallback } from "react";
 import { Copy, Check, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,7 +16,7 @@ const HighlightedText = React.memo(({ text, highlight }: { text: string; highlig
   if (!highlight || !highlight.trim()) {
     return <span>{text}</span>;
   }
-  const regex = new RegExp(`(${highlight})`, 'gi');
+  const regex = new RegExp(`(${highlight.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
   const parts = text.split(regex);
   return (
     <span>
@@ -34,7 +34,7 @@ const HighlightedText = React.memo(({ text, highlight }: { text: string; highlig
 });
 export function FeedCard({ feed, searchQuery, isFavorite, onToggleFavorite }: FeedCardProps) {
   const [copied, setCopied] = useState(false);
-  const handleCopy = () => {
+  const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(feed.url).then(() => {
       setCopied(true);
       toast.success(`Copied URL for "${feed.title}"`);
@@ -43,7 +43,7 @@ export function FeedCard({ feed, searchQuery, isFavorite, onToggleFavorite }: Fe
       console.error("Failed to copy URL: ", err);
       toast.error("Failed to copy URL to clipboard.");
     });
-  };
+  }, [feed.url, feed.title]);
   return (
     <motion.div
       layout
@@ -58,7 +58,7 @@ export function FeedCard({ feed, searchQuery, isFavorite, onToggleFavorite }: Fe
           <p className="text-base font-semibold text-foreground mb-2 flex-grow">
             <HighlightedText text={feed.title} highlight={searchQuery} />
           </p>
-          <p className="text-xs text-muted-foreground truncate mb-4">{feed.url}</p>
+          <p className="text-xs text-muted-foreground truncate mb-4" aria-hidden="true">{feed.url}</p>
           <div className="mt-auto flex items-center gap-2">
             <TooltipProvider delayDuration={200}>
               <Tooltip>
@@ -67,7 +67,8 @@ export function FeedCard({ feed, searchQuery, isFavorite, onToggleFavorite }: Fe
                     onClick={() => onToggleFavorite(feed.url)}
                     variant="ghost"
                     size="icon"
-                    className="h-9 w-9 shrink-0 text-muted-foreground hover:text-yellow-500 transition-colors duration-200"
+                    className="h-9 w-9 shrink-0 text-muted-foreground hover:text-yellow-500 transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500"
+                    aria-label={`Toggle ${isFavorite ? 'remove' : 'add'} "${feed.title}" to favorites`}
                   >
                     <Star className={`h-5 w-5 transition-all duration-200 ${isFavorite ? 'fill-yellow-400 text-yellow-500' : 'fill-transparent'}`} />
                   </Button>
@@ -80,11 +81,12 @@ export function FeedCard({ feed, searchQuery, isFavorite, onToggleFavorite }: Fe
             <Button
               onClick={handleCopy}
               size="sm"
-              className={`w-full group transition-all duration-200 hover:scale-105 active:scale-95 ${
+              className={`w-full group transition-all duration-200 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500 ${
                 copied
                   ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white"
                   : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-sm"
               }`}
+              aria-label={`Copy URL for ${feed.title}`}
             >
               {copied ? (
                 <>
