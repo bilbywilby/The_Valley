@@ -9,8 +9,10 @@ import {
   SidebarMenuButton,
   SidebarMenuBadge,
 } from "@/components/ui/sidebar";
-import { categorizedFeeds } from "@/data/feeds";
+import { useFeedsStore } from "@/stores/useFeedsStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
+import { useHealthStore } from "@/stores/useHealthStore";
+import { Badge } from "@/components/ui/badge";
 const categoryIcons: { [key: string]: React.ElementType } = {
   "News - Regional": Newspaper,
   "News - Local": Newspaper,
@@ -32,13 +34,20 @@ const categoryIcons: { [key: string]: React.ElementType } = {
   "Utilities / Infrastructure": Wrench,
 };
 export function AppSidebar(): JSX.Element {
+  const categorizedFeeds = useFeedsStore(s => s.categorizedFeeds);
   const categories = Object.keys(categorizedFeeds);
-  const favoritesCount = useFavoritesStore(state => state.favoriteUrls?.length ?? 0);
-  const filterFavorites = useFavoritesStore(state => state.filterFavorites);
-  const toggleFilterFavorites = useFavoritesStore(state => state.toggleFilterFavorites);
+  const favoritesCount = useFavoritesStore(state => state.favoriteUrls.length);
+  const toggleShowFavoritesOnly = useFavoritesStore(state => state.toggleShowFavoritesOnly);
+  const statuses = useHealthStore(s => s.statuses);
+  const getCategoryHealthPercent = (category: string) => {
+    const feeds = categorizedFeeds[category];
+    if (!feeds || feeds.length === 0) return null;
+    const healthyCount = feeds.filter(f => statuses[f.url]?.status === 'ok').length;
+    return Math.round((healthyCount / feeds.length) * 100);
+  };
   const scrollToCategory = (e: React.MouseEvent<HTMLAnchorElement>, category: string) => {
     e.preventDefault();
-    const elementId = category === 'Favorites' ? 'search-section' : category.replace(/\s+/g, '-').toLowerCase();
+    const elementId = category.replace(/\s+/g, '-').toLowerCase();
     const element = document.getElementById(elementId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -56,7 +65,7 @@ export function AppSidebar(): JSX.Element {
         <SidebarMenu>
           <SidebarMenuItem key="favorites">
             <SidebarMenuButton asChild className="group hover:bg-accent/50 hover:shadow-sm hover:scale-105 transition-all duration-150">
-              <a href="#search-section" onClick={(e) => { e.preventDefault(); toggleFilterFavorites(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+              <a href="#favorites" onClick={(e) => { e.preventDefault(); toggleShowFavoritesOnly(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
                 <Star className="w-4 h-4 text-yellow-500 group-hover:scale-110 transition-transform" />
                 <span className="font-semibold">Favorites</span>
               </a>
@@ -65,6 +74,7 @@ export function AppSidebar(): JSX.Element {
           </SidebarMenuItem>
           {categories.map((category) => {
             const Icon = categoryIcons[category] || Rss;
+            const healthPercent = getCategoryHealthPercent(category);
             return (
               <SidebarMenuItem key={category}>
                 <SidebarMenuButton asChild className="group hover:bg-accent/50 hover:shadow-sm hover:scale-105 transition-all duration-150">
@@ -73,6 +83,9 @@ export function AppSidebar(): JSX.Element {
                     <span className="font-semibold">{category}</span>
                   </a>
                 </SidebarMenuButton>
+                {healthPercent !== null && (
+                  <Badge variant={healthPercent > 80 ? "default" : "destructive"} className="text-xs">{healthPercent}%</Badge>
+                )}
                 <SidebarMenuBadge>{categorizedFeeds[category].length}</SidebarMenuBadge>
               </SidebarMenuItem>
             );

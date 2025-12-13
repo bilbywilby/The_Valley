@@ -19,107 +19,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useFeedsStore } from '@/stores/useFeedsStore';
-import { Feed } from '@/stores/useFeedsStore';
 import { toast } from 'sonner';
-import {
-  Edit3,
-  Plus,
-  Trash2,
-  Upload,
-  Download,
-  GripVertical,
-} from 'lucide-react';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { motion, AnimatePresence } from 'framer-motion';
-// Motion variants
-const slideUpScaleVariants = {
-  hidden: { y: 50, opacity: 0, scale: 0.95 },
-  visible: { y: 0, opacity: 1, scale: 1 },
-};
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 },
-  },
-};
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: { y: 0, opacity: 1 },
-};
-function SortableFeedItem({
-  feed,
-  category,
-  onDelete,
-}: {
-  feed: Feed;
-  category: string;
-  onDelete: (url: string) => void;
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: feed.url });
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-  return (
-    <motion.div
-      ref={setNodeRef}
-      style={style}
-      layout
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.2 }}
-      className="flex items-center justify-between bg-secondary p-2 rounded-md"
-    >
-      <div className="flex items-center gap-2 flex-1 truncate">
-        <button
-          {...attributes}
-          {...listeners}
-          className="cursor-grab touch-none p-1 focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
-        >
-          <GripVertical className="h-4 w-4 text-muted-foreground" />
-        </button>
-        <span
-          className="text-sm font-medium truncate flex-1"
-          title={feed.title}
-        >
-          {feed.title}
-        </span>
-      </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-7 w-7"
-        onClick={() => onDelete(feed.url)}
-      >
-        <Trash2 className="h-4 w-4 text-destructive" />
-      </Button>
-    </motion.div>
-  );
-}
-export function EditFeedsSheet({
-  open,
-  onOpenChange,
-}: {
+import { Edit3, Plus, Trash2, Upload, Download } from 'lucide-react';
+interface EditFeedsSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}) {
+}
+export function EditFeedsSheet({ open, onOpenChange }: EditFeedsSheetProps) {
   const {
     categorizedFeeds,
     addCategory,
@@ -128,27 +34,11 @@ export function EditFeedsSheet({
     deleteFeed,
     exportData,
     importData,
-    reorderFeeds,
   } = useFeedsStore();
   const [newCategory, setNewCategory] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(
-    Object.keys(categorizedFeeds)[0] || ''
-  );
+  const [selectedCategory, setSelectedCategory] = useState(Object.keys(categorizedFeeds)[0] || '');
   const [newFeedTitle, setNewFeedTitle] = useState('');
   const [newFeedUrl, setNewFeedUrl] = useState('');
-  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const oldIndex = categorizedFeeds[selectedCategory].findIndex(
-        (f) => f.url === active.id
-      );
-      const newIndex = categorizedFeeds[selectedCategory].findIndex(
-        (f) => f.url === over.id
-      );
-      reorderFeeds(selectedCategory, oldIndex, newIndex);
-    }
-  };
   const handleAddCategory = () => {
     if (newCategory.trim()) {
       addCategory(newCategory.trim());
@@ -158,13 +48,8 @@ export function EditFeedsSheet({
   };
   const handleAddFeed = () => {
     if (newFeedTitle.trim() && newFeedUrl.trim() && selectedCategory) {
-      addFeed(selectedCategory, {
-        title: newFeedTitle.trim(),
-        url: newFeedUrl.trim(),
-      });
-      toast.success(
-        `Feed "${newFeedTitle.trim()}" added to ${selectedCategory}.`
-      );
+      addFeed(selectedCategory, { title: newFeedTitle.trim(), url: newFeedUrl.trim() });
+      toast.success(`Feed "${newFeedTitle.trim()}" added to ${selectedCategory}.`);
       setNewFeedTitle('');
       setNewFeedUrl('');
     }
@@ -199,167 +84,95 @@ export function EditFeedsSheet({
   };
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex flex-col w-full sm:max-w-lg overflow-hidden">
+      <SheetContent className="flex flex-col w-full sm:max-w-lg">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2 text-2xl">
             <Edit3 className="h-6 w-6 text-indigo-500" />
             Edit Feeds & Categories
           </SheetTitle>
           <SheetDescription>
-            Add, remove, or reorder your feed sources. Changes are saved
-            automatically based on your privacy settings.
+            Add, remove, or edit your feed sources. Changes are saved automatically if local storage is enabled.
           </SheetDescription>
         </SheetHeader>
-        <motion.div
-          className="flex-1 overflow-hidden flex flex-col"
-          variants={slideUpScaleVariants}
-          initial="hidden"
-          animate="visible"
-          exit="hidden"
-          transition={{ duration: 0.3, ease: 'easeInOut' }}
-        >
-          <div className="flex-grow py-4 space-y-6 overflow-y-auto pr-4">
-            <motion.div
-              className="space-y-6"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              {/* Manage Categories */}
-              <motion.div
-                variants={itemVariants}
-                className="space-y-4 p-4 border rounded-lg"
-              >
-                <h3 className="font-semibold">Manage Categories</h3>
-                <div className="flex gap-2">
-                  <Input
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                    placeholder="New category name"
-                  />
-                  <Button onClick={handleAddCategory}>
-                    <Plus className="h-4 w-4 mr-2" /> Add
+        <div className="flex-grow py-4 space-y-6 overflow-y-auto pr-4">
+          {/* Categories Management */}
+          <div className="space-y-4 p-4 border rounded-lg">
+            <h3 className="font-semibold">Manage Categories</h3>
+            <div className="flex gap-2">
+              <Input
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                placeholder="New category name"
+              />
+              <Button onClick={handleAddCategory}><Plus className="h-4 w-4 mr-2" /> Add</Button>
+            </div>
+            <div className="max-h-40 overflow-y-auto space-y-2 pr-2">
+              {Object.keys(categorizedFeeds).map((cat) => (
+                <div key={cat} className="flex items-center justify-between bg-secondary p-2 rounded-md">
+                  <span className="text-sm font-medium">{cat}</span>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteCategory(cat)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>
-                <div className="max-h-40 overflow-y-auto space-y-2 pr-2">
-                  {Object.keys(categorizedFeeds).map((cat) => (
-                    <div
-                      key={cat}
-                      className="flex items-center justify-between bg-secondary p-2 rounded-md"
-                    >
-                      <span className="text-sm font-medium">{cat}</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={() => deleteCategory(cat)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-              {/* Manage Feeds */}
-              <motion.div
-                variants={itemVariants}
-                className="space-y-4 p-4 border rounded-lg"
-              >
-                <h3 className="font-semibold">Manage Feeds</h3>
-                <Select
-                  value={selectedCategory}
-                  onValueChange={setSelectedCategory}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.keys(categorizedFeeds).map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Input
-                  value={newFeedTitle}
-                  onChange={(e) => setNewFeedTitle(e.target.value)}
-                  placeholder="New feed title"
-                />
-                <Input
-                  value={newFeedUrl}
-                  onChange={(e) => setNewFeedUrl(e.target.value)}
-                  placeholder="New feed URL"
-                />
-                <Button onClick={handleAddFeed} className="w-full">
-                  <Plus className="h-4 w-4 mr-2" /> Add Feed
-                </Button>
-                <div className="max-h-60 overflow-y-auto space-y-2 pr-2" role="list" aria-label={`Feeds in ${selectedCategory}`}>
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <SortableContext
-                      items={
-                        categorizedFeeds[selectedCategory]?.map((f) => f.url) ||
-                        []
-                      }
-                      strategy={verticalListSortingStrategy}
-                    >
-                      <AnimatePresence>
-                        {categorizedFeeds[selectedCategory]?.map((feed) => (
-                          <SortableFeedItem
-                            key={feed.url}
-                            feed={feed}
-                            category={selectedCategory}
-                            onDelete={(url) =>
-                              deleteFeed(selectedCategory, url)
-                            }
-                          />
-                        ))}
-                      </AnimatePresence>
-                    </SortableContext>
-                  </DndContext>
-                </div>
-              </motion.div>
-              {/* Backup & Restore */}
-              <motion.div
-                variants={itemVariants}
-                className="space-y-4 p-4 border rounded-lg"
-              >
-                <h3 className="font-semibold">Backup & Restore</h3>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleExport}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    <Download className="h-4 w-4 mr-2" /> Export JSON
-                  </Button>
-                  <Button asChild variant="outline" className="w-full">
-                    <Label>
-                      <Upload className="h-4 w-4 mr-2" /> Import JSON
-                      <Input
-                        type="file"
-                        accept=".json"
-                        className="hidden"
-                        onChange={handleImport}
-                      />
-                    </Label>
-                  </Button>
-                </div>
-              </motion.div>
-            </motion.div>
+              ))}
+            </div>
           </div>
-          <SheetFooter>
-            <SheetClose asChild>
-              <Button type="submit" className="w-full">
-                Done
+          {/* Feeds Management */}
+          <div className="space-y-4 p-4 border rounded-lg">
+            <h3 className="font-semibold">Manage Feeds</h3>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.keys(categorizedFeeds).map((cat) => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              value={newFeedTitle}
+              onChange={(e) => setNewFeedTitle(e.target.value)}
+              placeholder="New feed title"
+            />
+            <Input
+              value={newFeedUrl}
+              onChange={(e) => setNewFeedUrl(e.target.value)}
+              placeholder="New feed URL"
+            />
+            <Button onClick={handleAddFeed} className="w-full"><Plus className="h-4 w-4 mr-2" /> Add Feed</Button>
+            <div className="max-h-40 overflow-y-auto space-y-2 pr-2">
+              {categorizedFeeds[selectedCategory]?.map((feed) => (
+                <div key={feed.url} className="flex items-center justify-between bg-secondary p-2 rounded-md">
+                  <span className="text-sm font-medium truncate flex-1" title={feed.title}>{feed.title}</span>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteFeed(selectedCategory, feed.url)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Data Management */}
+          <div className="space-y-4 p-4 border rounded-lg">
+            <h3 className="font-semibold">Backup & Restore</h3>
+            <div className="flex gap-2">
+              <Button onClick={handleExport} variant="outline" className="w-full">
+                <Download className="h-4 w-4 mr-2" /> Export JSON
               </Button>
-            </SheetClose>
-          </SheetFooter>
-        </motion.div>
+              <Button asChild variant="outline" className="w-full">
+                <Label>
+                  <Upload className="h-4 w-4 mr-2" /> Import JSON
+                  <Input type="file" accept=".json" className="hidden" onChange={handleImport} />
+                </Label>
+              </Button>
+            </div>
+          </div>
+        </div>
+        <SheetFooter>
+          <SheetClose asChild>
+            <Button type="submit" className="w-full">Done</Button>
+          </SheetClose>
+        </SheetFooter>
       </SheetContent>
     </Sheet>
   );

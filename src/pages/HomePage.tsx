@@ -1,20 +1,20 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback, forwardRef } from "react";
-import { Download, Search, Info, X, Settings } from "lucide-react";
+import { Download, Search, Info, X, Settings, Edit3 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Toaster } from "@/components/ui/sonner";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { categorizedFeeds } from "@/data/feeds";
-import { FeedCard } from "@/components/feed-card";
 import { generateAndDownloadOpml } from "@/lib/opml-generator";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { usePrivacyStore } from "@/stores/usePrivacyStore";
+import { useFeedsStore } from "@/stores/useFeedsStore";
+import { useHealthStore } from "@/stores/useHealthStore";
 import { PrivacySettingsSheet } from "@/components/PrivacySettingsSheet";
+import { EditFeedsSheet } from "@/components/EditFeedsSheet";
+import { FeedCard } from "@/components/feed-card";
 import { motion, AnimatePresence } from "framer-motion";
 type LazySectionProps = {
   category: string;
@@ -104,21 +104,39 @@ const LazySection = forwardRef<HTMLDivElement, LazySectionProps>(
 LazySection.displayName = 'LazySection';
 export function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [isPrivacySheetOpen, setPrivacySheetOpen] = useState(false);
+  const [isEditSheetOpen, setEditSheetOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const { favoriteUrls, isFavorite, toggleFavorite, getFavoriteFeeds, loadFromStorage } = useFavoritesStore();
-  const { enableLocalStorage } = usePrivacyStore();
+  // Stores
+  const { favoriteUrls, isFavorite, toggleFavorite, getFavoriteFeeds, showFavoritesOnly, toggleShowFavoritesOnly, loadFromStorage } = useFavoritesStore();
+  const { enableLocalStorage, healthChecksEnabled } = usePrivacyStore();
+  const categorizedFeeds = useFeedsStore(s => s.categorizedFeeds);
+  const getFlatFeeds = useFeedsStore(s => s.getFlatFeeds);
+  const checkHealth = useHealthStore(s => s.checkHealth);
+  const isCheckingHealth = useHealthStore(s => s.isChecking);
+  // Effect for initializing stores from localStorage based on privacy settings
   useEffect(() => {
     if (enableLocalStorage) {
       loadFromStorage();
+      useFeedsStore.persist.rehydrate();
+      useHealthStore.persist.rehydrate();
     }
   }, [enableLocalStorage, loadFromStorage]);
+  // Effect for persisting favorites store
   useEffect(() => {
     if (enableLocalStorage) {
-      localStorage.setItem('lv-feed-favorites-storage', JSON.stringify({ version: 0, state: { favoriteUrls } }));
+      localStorage.setItem('lv-feed-favorites-storage', JSON.stringify({ version: 0, state: { favoriteUrls, showFavoritesOnly } }));
     }
-  }, [favoriteUrls, enableLocalStorage]);
+  }, [favoriteUrls, showFavoritesOnly, enableLocalStorage]);
+  // Effect for triggering health checks on mount if enabled
+  useEffect(() => {
+    if (healthChecksEnabled) {
+      const allUrls = getFlatFeeds().map(f => f.url);
+      if (allUrls.length > 0) {
+        checkHealth(allUrls);
+      }
+    }
+  }, [healthChecksEnabled, checkHealth, getFlatFeeds]);
   const boundIsFavorite = useCallback((url: string) => isFavorite(url), [isFavorite]);
   const boundToggleFavorite = useCallback((url: string) => toggleFavorite(url), [toggleFavorite]);
   const filteredFeeds = useMemo(() => {
@@ -139,8 +157,8 @@ export function HomePage() {
       }
     }
     return filtered;
-  }, [searchQuery, showFavoritesOnly, getFavoriteFeeds]);
-  const totalFeeds = useMemo(() => Object.values(categorizedFeeds).flat().length, []);
+  }, [searchQuery, showFavoritesOnly, getFavoriteFeeds, categorizedFeeds]);
+  const totalFeeds = useMemo(() => Object.values(categorizedFeeds).flat().length, [categorizedFeeds]);
   const searchResultCount = useMemo(() => Object.values(filteredFeeds).flat().length, [filteredFeeds]);
   const handleClearSearch = useCallback(() => {
     setSearchQuery("");
@@ -161,7 +179,7 @@ export function HomePage() {
               <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400">
                 {totalFeeds}+ Categorized RSS/Atom Feeds for the Lehigh Valley Region
               </p>
-              <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
                  <Button
                     onClick={generateAndDownloadOpml}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500"
@@ -169,6 +187,15 @@ export function HomePage() {
                   >
                     <Download className="mr-2 h-5 w-5" />
                     Download Full OPML
+                  </Button>
+                  <Button
+                    onClick={() => setEditSheetOpen(true)}
+                    variant="outline"
+                    size="lg"
+                    className="font-semibold shadow-sm hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
+                  >
+                    <Edit3 className="mr-2 h-5 w-5" />
+                    Edit Feeds
                   </Button>
                   <Button
                     onClick={() => setPrivacySheetOpen(true)}
@@ -207,8 +234,18 @@ export function HomePage() {
                     )}
                  </div>
                  <div className="flex items-center justify-center space-x-2 pt-2">
-                    <Checkbox id="favorites-only" checked={showFavoritesOnly} onCheckedChange={(checked) => setShowFavoritesOnly(!!checked)} />
-                    <Label htmlFor="favorites-only" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">Show Favorites Only</Label>
+                    <div
+                      className="flex items-center space-x-2 cursor-pointer"
+                      onClick={toggleShowFavoritesOnly}
+                    >
+                      <motion.div
+                        className={`w-4 h-4 rounded-sm border-2 ${showFavoritesOnly ? 'bg-indigo-600 border-indigo-600' : 'border-gray-400'}`}
+                        animate={{ scale: showFavoritesOnly ? 1 : 0.8 }}
+                      >
+                        {showFavoritesOnly && <motion.div initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="white" strokeWidth="3" fill="none" /></svg></motion.div>}
+                      </motion.div>
+                      <Label htmlFor="favorites-only" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">Show Favorites Only</Label>
+                    </div>
                  </div>
               </div>
               {searchQuery && (
@@ -249,6 +286,7 @@ export function HomePage() {
         </footer>
         <Toaster richColors position="top-right" />
         <PrivacySettingsSheet open={isPrivacySheetOpen} onOpenChange={setPrivacySheetOpen} />
+        <EditFeedsSheet open={isEditSheetOpen} onOpenChange={setEditSheetOpen} />
       </div>
     </AppLayout>
   );

@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { ShieldCheck, Trash2 } from 'lucide-react';
+import { ShieldCheck, Trash2, Activity } from 'lucide-react';
 import { usePrivacyStore } from '@/stores/usePrivacyStore';
 interface PrivacySettingsSheetProps {
   open: boolean;
@@ -31,6 +31,8 @@ interface PrivacySettingsSheetProps {
 export function PrivacySettingsSheet({ open, onOpenChange }: PrivacySettingsSheetProps) {
   const enableLocalStorage = usePrivacyStore((state) => state.enableLocalStorage);
   const toggleLocalStorage = usePrivacyStore((state) => state.toggleLocalStorage);
+  const healthChecksEnabled = usePrivacyStore((state) => state.healthChecksEnabled);
+  const toggleHealthChecks = usePrivacyStore((state) => state.toggleHealthChecks);
   const clearAllData = usePrivacyStore((state) => state.clearAllData);
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -41,7 +43,7 @@ export function PrivacySettingsSheet({ open, onOpenChange }: PrivacySettingsShee
             Privacy & Data Settings
           </SheetTitle>
           <SheetDescription>
-            This application runs entirely in your browser. No data is sent to any server.
+            This application runs entirely in your browser. No data is sent to any server unless you opt-in to specific features.
           </SheetDescription>
         </SheetHeader>
         <div className="flex-grow py-4 space-y-6">
@@ -58,7 +60,24 @@ export function PrivacySettingsSheet({ open, onOpenChange }: PrivacySettingsShee
               />
             </div>
             <p className="text-sm text-muted-foreground mt-2">
-              Turn this on to save your favorite feeds and theme preference between visits. When off, all settings are reset when you close the tab.
+              Turn this on to save your favorite feeds, custom feeds, and theme preference between visits. When off, all settings are reset when you close the tab.
+            </p>
+          </div>
+          <div className="p-4 border rounded-lg bg-background">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="health-check-switch" className="font-semibold text-base flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Enable Feed Health Checks
+              </Label>
+              <Switch
+                id="health-check-switch"
+                checked={healthChecksEnabled}
+                onCheckedChange={toggleHealthChecks}
+                aria-label="Toggle feed health checks"
+              />
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              Opt-in to allow the app to check if feed URLs are active. This sends URLs to a privacy-respecting Cloudflare Worker. Statuses are cached in your browser for 1 hour.
             </p>
           </div>
           <div className="p-4 border border-destructive/50 rounded-lg bg-destructive/5">
@@ -77,7 +96,7 @@ export function PrivacySettingsSheet({ open, onOpenChange }: PrivacySettingsShee
                         <AlertDialogHeader>
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete all your saved favorites and theme settings from your browser. This action cannot be undone.
+                            This will permanently delete all your saved favorites, custom feeds, and theme settings from your browser. This action cannot be undone.
                         </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
