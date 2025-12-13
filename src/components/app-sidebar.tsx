@@ -53,13 +53,13 @@ export function AppSidebar(): JSX.Element {
             const Icon = categoryIcons[category] || Rss;
             return (
               <SidebarMenuItem key={category}>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton asChild className="group hover:scale-[1.02] hover:shadow-glow active:scale-[0.98] transition-all duration-150">
                   <a href={`#${category.replace(/\s+/g, '-').toLowerCase()}`} onClick={(e) => scrollToCategory(e, category)}>
                     <Icon className="w-4 h-4" />
                     <span>{category}</span>
                   </a>
                 </SidebarMenuButton>
-                <SidebarMenuBadge>{categorizedFeeds[category].length}</SidebarMenuBadge>
+                <SidebarMenuBadge className="transition-transform group-hover:scale-105">{categorizedFeeds[category].length}</SidebarMenuBadge>
               </SidebarMenuItem>
             );
           })}

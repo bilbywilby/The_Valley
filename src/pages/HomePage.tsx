@@ -1,15 +1,17 @@
-import React, { useState, useMemo } from "react";
-import { Download, Search, Info } from "lucide-react";
+import React, { useState, useMemo, useRef } from "react";
+import { Download, Search, Info, X } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Toaster } from "@/components/ui/sonner";
+import { Badge } from "@/components/ui/badge";
 import { categorizedFeeds } from "@/data/feeds";
 import { FeedCard } from "@/components/feed-card";
 import { generateAndDownloadOpml } from "@/lib/opml-generator";
 import { motion, AnimatePresence } from "framer-motion";
 export function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const filteredFeeds = useMemo(() => {
     if (!searchQuery.trim()) {
       return categorizedFeeds;
@@ -30,6 +32,19 @@ export function HomePage() {
   }, [searchQuery]);
   const totalFeeds = useMemo(() => Object.values(categorizedFeeds).flat().length, []);
   const searchResultCount = useMemo(() => Object.values(filteredFeeds).flat().length, [filteredFeeds]);
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    searchInputRef.current?.focus();
+  };
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
   return (
     <AppLayout>
       <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
@@ -46,7 +61,7 @@ export function HomePage() {
               <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
                  <Button
                     onClick={generateAndDownloadOpml}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 hover:scale-105 hover:shadow-glow"
                     size="lg"
                   >
                     <Download className="mr-2 h-5 w-5" />
@@ -61,17 +76,37 @@ export function HomePage() {
               </div>
             </header>
             {/* Search Bar */}
-            <div className="sticky top-4 z-40 mb-10">
+            <div className="sticky top-4 z-50 mb-10">
               <div className="relative max-w-2xl mx-auto">
                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                  <Input
+                    ref={searchInputRef}
                     type="text"
                     placeholder={`Search ${totalFeeds}+ feeds... (e.g. "Police", "Allentown")`}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 h-12 text-base rounded-full shadow-lg bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500"
+                    className="w-full pl-10 pr-10 py-3 h-12 text-base rounded-full shadow-lg dark:shadow-xl bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500"
                  />
+                 {searchQuery.length > 0 && (
+                    <Button
+                        onClick={handleClearSearch}
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full p-0"
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                 )}
               </div>
+              {searchQuery && (
+                <div className="text-center mt-2">
+                  {searchResultCount > 0 ? (
+                     <Badge variant="secondary">{searchResultCount} result{searchResultCount === 1 ? '' : 's'} found</Badge>
+                  ) : (
+                     <Badge variant="destructive">No results found</Badge>
+                  )}
+                </div>
+              )}
             </div>
             {/* Feed List */}
             <div className="space-y-12">
@@ -82,10 +117,10 @@ export function HomePage() {
                       key={category}
                       id={category.replace(/\s+/g, '-').toLowerCase()}
                       className="bg-white dark:bg-slate-800/50 p-4 sm:p-6 rounded-xl shadow-lg"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
                       layout
+                      variants={containerVariants}
+                      initial="hidden"
+                      animate="visible"
                     >
                       <h2 className="text-2xl sm:text-3xl font-bold text-indigo-700 dark:text-indigo-400 border-b border-indigo-100 dark:border-indigo-900 pb-3 mb-6">
                         {category}
