@@ -13,7 +13,7 @@ interface FeedCardProps {
   onToggleFavorite: (url: string) => void;
 }
 const HighlightedText = React.memo(({ text, highlight }: { text: string; highlight: string }) => {
-  if (!highlight.trim()) {
+  if (!highlight || !highlight.trim()) {
     return <span>{text}</span>;
   }
   const regex = new RegExp(`(${highlight})`, 'gi');
