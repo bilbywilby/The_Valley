@@ -33,7 +33,9 @@ const categoryIcons: { [key: string]: React.ElementType } = {
 };
 export function AppSidebar(): JSX.Element {
   const categories = Object.keys(categorizedFeeds);
-  const favoritesCount = useFavoritesStore(state => state.favoriteUrls.length);
+  const favoritesCount = useFavoritesStore(state => state.favoriteUrls?.length ?? 0);
+  const filterFavorites = useFavoritesStore(state => state.filterFavorites);
+  const toggleFilterFavorites = useFavoritesStore(state => state.toggleFilterFavorites);
   const scrollToCategory = (e: React.MouseEvent<HTMLAnchorElement>, category: string) => {
     e.preventDefault();
     const elementId = category === 'Favorites' ? 'search-section' : category.replace(/\s+/g, '-').toLowerCase();
@@ -54,7 +56,7 @@ export function AppSidebar(): JSX.Element {
         <SidebarMenu>
           <SidebarMenuItem key="favorites">
             <SidebarMenuButton asChild className="group hover:bg-accent/50 hover:shadow-sm hover:scale-105 transition-all duration-150">
-              <a href="#search-section" onClick={(e) => scrollToCategory(e, 'Favorites')}>
+              <a href="#search-section" onClick={(e) => { e.preventDefault(); toggleFilterFavorites(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
                 <Star className="w-4 h-4 text-yellow-500 group-hover:scale-110 transition-transform" />
                 <span className="font-semibold">Favorites</span>
               </a>
