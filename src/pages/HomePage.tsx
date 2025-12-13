@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { Download, Search, Info, X } from "lucide-react";
+import React, { useState, useMemo, useRef, useEffect, useCallback, forwardRef } from "react";
+import { Download, Search, Info, X, Settings } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,92 +13,114 @@ import { categorizedFeeds } from "@/data/feeds";
 import { FeedCard } from "@/components/feed-card";
 import { generateAndDownloadOpml } from "@/lib/opml-generator";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
+import { usePrivacyStore } from "@/stores/usePrivacyStore";
+import { PrivacySettingsSheet } from "@/components/PrivacySettingsSheet";
 import { motion, AnimatePresence } from "framer-motion";
-const LazySection = ({ category, feeds, searchQuery, isFavorite, onToggleFavorite }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.unobserve(entry.target);
-        }
-      },
-      { rootMargin: "0px 0px -100px 0px" }
-    );
-    observer.observe(element);
-    return () => {
-      if (element) {
-        observer.unobserve(element);
-      }
-    };
-  }, []);
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.05 } },
-  };
-  return (
-    <motion.section
-      ref={ref}
-      id={category.replace(/\s+/g, '-').toLowerCase()}
-      className="bg-white/90 dark:bg-slate-800/70 border border-gray-200/50 dark:border-slate-700/50 shadow-md p-6 md:p-8 rounded-2xl"
-      initial={{ opacity: 0, y: 50 }}
-      animate={isVisible ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-    >
-      <h2 className="text-3xl md:text-4xl font-display font-bold text-indigo-700 dark:text-indigo-400 border-b border-indigo-100 dark:border-indigo-900 pb-3 mb-6">
-        {category}
-      </h2>
-      {!isVisible ? (
-        <div className="grid gap-6 md:gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <Card key={index} className="flex flex-col h-full bg-white/90 dark:bg-slate-800/80 border-gray-200/50 dark:border-slate-700/50">
-              <CardContent className="p-4 flex flex-col flex-grow">
-                <Skeleton className="h-6 w-4/5 mb-2" />
-                <Skeleton className="h-4 w-full mb-4" />
-                <div className="mt-auto flex items-center gap-2">
-                  <Skeleton className="h-9 w-9 rounded-md" />
-                  <Skeleton className="h-9 w-full rounded-md" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <motion.div
-          className="grid gap-6 md:gap-8 sm:grid-cols-2 lg:grid-cols-3"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {feeds.map((feed) => (
-            <FeedCard
-              key={feed.url}
-              feed={feed}
-              searchQuery={searchQuery}
-              isFavorite={isFavorite(feed.url)}
-              onToggleFavorite={onToggleFavorite}
-            />
-          ))}
-        </motion.div>
-      )}
-    </motion.section>
-  );
+type LazySectionProps = {
+  category: string;
+  feeds: any[];
+  searchQuery: string;
+  isFavorite: (url: string) => boolean;
+  onToggleFavorite: (url: string) => void;
 };
+const LazySection = forwardRef<HTMLDivElement, LazySectionProps>(
+  ({ category, feeds, searchQuery, isFavorite, onToggleFavorite }, ref) => {
+    const observerRef = useRef<HTMLDivElement>(null);
+    const [isVisible, setIsVisible] = useState(false);
+    useEffect(() => {
+      const element = observerRef.current;
+      if (!element) return;
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.unobserve(entry.target);
+          }
+        },
+        { rootMargin: "0px 0px -100px 0px" }
+      );
+      observer.observe(element);
+      return () => {
+        if (element) {
+          observer.unobserve(element);
+        }
+      };
+    }, []);
+    const containerVariants = {
+      hidden: { opacity: 0 },
+      visible: { opacity: 1, transition: { staggerChildren: 0.05 } },
+    };
+    return (
+      <div ref={ref}>
+        <motion.section
+          ref={observerRef}
+          id={category.replace(/\s+/g, '-').toLowerCase()}
+          className="bg-white/90 dark:bg-slate-800/70 border border-gray-200/50 dark:border-slate-700/50 shadow-md p-6 md:p-8 rounded-2xl"
+          initial={{ opacity: 0, y: 50 }}
+          animate={isVisible ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        >
+          <h2 className="text-3xl md:text-4xl font-display font-bold text-indigo-700 dark:text-indigo-400 border-b border-indigo-100 dark:border-indigo-900 pb-3 mb-6">
+            {category}
+          </h2>
+          {!isVisible ? (
+            <div className="grid gap-6 md:gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <Card key={index} className="flex flex-col h-full bg-white/90 dark:bg-slate-800/80 border-gray-200/50 dark:border-slate-700/50">
+                  <CardContent className="p-4 flex flex-col flex-grow">
+                    <Skeleton className="h-6 w-4/5 mb-2" />
+                    <Skeleton className="h-4 w-full mb-4" />
+                    <div className="mt-auto flex items-center gap-2">
+                      <Skeleton className="h-9 w-9 rounded-md" />
+                      <Skeleton className="h-9 w-full rounded-md" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <motion.div
+              className="grid gap-6 md:gap-8 sm:grid-cols-2 lg:grid-cols-3"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {feeds.map((feed) => (
+                <FeedCard
+                  key={feed.url}
+                  feed={feed}
+                  searchQuery={searchQuery}
+                  isFavorite={isFavorite(feed.url)}
+                  onToggleFavorite={onToggleFavorite}
+                />
+              ))}
+            </motion.div>
+          )}
+        </motion.section>
+      </div>
+    );
+  }
+);
+LazySection.displayName = 'LazySection';
 export function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [isPrivacySheetOpen, setPrivacySheetOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const favoriteUrls = useFavoritesStore(state => state.favoriteUrls);
-  const isFavorite = useFavoritesStore(state => state.isFavorite);
-  const toggleFavorite = useFavoritesStore(state => state.toggleFavorite);
-  const getFavoriteFeeds = useFavoritesStore(state => state.getFavoriteFeeds);
+  const { favoriteUrls, isFavorite, toggleFavorite, getFavoriteFeeds, loadFromStorage } = useFavoritesStore();
+  const { enableLocalStorage } = usePrivacyStore();
+  useEffect(() => {
+    if (enableLocalStorage) {
+      loadFromStorage();
+    }
+  }, [enableLocalStorage, loadFromStorage]);
+  useEffect(() => {
+    if (enableLocalStorage) {
+      localStorage.setItem('lv-feed-favorites-storage', JSON.stringify({ version: 0, state: { favoriteUrls } }));
+    }
+  }, [favoriteUrls, enableLocalStorage]);
   const boundIsFavorite = useCallback((url: string) => isFavorite(url), [isFavorite]);
   const boundToggleFavorite = useCallback((url: string) => toggleFavorite(url), [toggleFavorite]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const filteredFeeds = useMemo(() => {
     const sourceFeeds = showFavoritesOnly ? { "Favorites": getFavoriteFeeds() } : categorizedFeeds;
     if (!searchQuery.trim()) {
@@ -117,7 +139,7 @@ export function HomePage() {
       }
     }
     return filtered;
-  }, [searchQuery, showFavoritesOnly, favoriteUrls, getFavoriteFeeds]);
+  }, [searchQuery, showFavoritesOnly, getFavoriteFeeds]);
   const totalFeeds = useMemo(() => Object.values(categorizedFeeds).flat().length, []);
   const searchResultCount = useMemo(() => Object.values(filteredFeeds).flat().length, [filteredFeeds]);
   const handleClearSearch = useCallback(() => {
@@ -147,6 +169,15 @@ export function HomePage() {
                   >
                     <Download className="mr-2 h-5 w-5" />
                     Download Full OPML
+                  </Button>
+                  <Button
+                    onClick={() => setPrivacySheetOpen(true)}
+                    variant="ghost"
+                    size="icon"
+                    className="h-12 w-12 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Privacy settings"
+                  >
+                    <Settings className="h-6 w-6" />
                   </Button>
               </div>
               <div className="mt-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-xl shadow-sm flex items-center justify-center gap-2 max-w-2xl mx-auto">
@@ -214,9 +245,10 @@ export function HomePage() {
           </div>
         </main>
         <footer className="mt-12 py-6 border-t border-gray-200 dark:border-slate-700 text-center text-sm text-muted-foreground bg-white/80 dark:bg-slate-900/50 backdrop-blur-sm">
-          Built with ❤️ at Cloudflare
+          Built with ❤️ at Cloudflare | Fully client-side, no tracking. LocalStorage is optional (opt-in via settings).
         </footer>
         <Toaster richColors position="top-right" />
+        <PrivacySettingsSheet open={isPrivacySheetOpen} onOpenChange={setPrivacySheetOpen} />
       </div>
     </AppLayout>
   );

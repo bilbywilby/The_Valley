@@ -1,45 +1,40 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-
+import { useFavoritesStore } from './useFavoritesStore';
 interface PrivacyState {
-  storageMode: 'session' | 'local';
-  healthChecksEnabled: boolean;
-  toggleStorageMode: () => void;
-  toggleHealthChecks: (enabled: boolean) => void;
+  enableLocalStorage: boolean;
+  toggleLocalStorage: (enabled: boolean) => void;
   clearAllData: () => void;
 }
 export const usePrivacyStore = create<PrivacyState>()(
   persist(
     (set, get) => ({
-      storageMode: 'session',
-      healthChecksEnabled: false,
-      toggleStorageMode: () => {
-        const newMode = get().storageMode === 'session' ? 'local' : 'session';
-        set({ storageMode: newMode });
-        // When switching, we might want to migrate data or clear the old one.
-        // For simplicity, we'll let the app re-hydrate from the new source on next load.
-      },
-      toggleHealthChecks: (enabled) => {
-        set({ healthChecksEnabled: enabled });
+      enableLocalStorage: false,
+      toggleLocalStorage: (enabled) => {
+        set({ enableLocalStorage: enabled });
         if (!enabled) {
-          const HEALTH_STORAGE_KEY = 'lv-health-status-storage';
-          localStorage.removeItem(HEALTH_STORAGE_KEY);
-          sessionStorage.removeItem(HEALTH_STORAGE_KEY);
+          // If persistence is disabled, clear stored data
+          localStorage.removeItem('lv-feed-favorites-storage');
+          localStorage.removeItem('theme');
+          useFavoritesStore.setState({ favoriteUrls: [] });
+          // Optionally force a theme reset to system preference
+          document.documentElement.classList.remove('dark', 'light');
         }
       },
       clearAllData: () => {
-        // This is a destructive action, clear everything from both storages
-        localStorage.clear();
-        sessionStorage.clear();
-        set({ storageMode: 'session', healthChecksEnabled: false });
-        // Reset all stores to their initial state
-
-        // Reload to reset feeds store and apply theme changes cleanly
-        window.location.reload();
+        // This is a destructive action, clear everything
+        localStorage.removeItem('lv-feed-favorites-storage');
+        localStorage.removeItem('theme');
+        localStorage.removeItem('lv-privacy-settings'); // Also clear privacy settings
+        useFavoritesStore.setState({ favoriteUrls: [] });
+        set({ enableLocalStorage: false });
+        // Reset theme to system preference
+        document.documentElement.classList.remove('dark', 'light');
+        window.location.reload(); // Reload to apply changes cleanly
       },
     }),
     {
-      name: 'lv-privacy-settings', // This one always persists to localStorage
+      name: 'lv-privacy-settings',
       storage: createJSONStorage(() => localStorage),
     }
   )
