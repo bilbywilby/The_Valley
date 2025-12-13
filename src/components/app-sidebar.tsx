@@ -1,5 +1,5 @@
 import React from "react";
-import { Rss, Newspaper, Building, Shield, Briefcase, GraduationCap, School, Users, Clapperboard, Utensils, Leaf, Mountain, Trophy, Tram, HeartPulse, Wrench } from "lucide-react";
+import { Rss, Newspaper, Building, Shield, Briefcase, GraduationCap, School, Users, Clapperboard, Utensils, Leaf, Mountain, Trophy, Bus, HeartPulse, Wrench } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -26,7 +26,7 @@ const categoryIcons: { [key: string]: React.ElementType } = {
   "Lifestyle - Environment": Leaf,
   "Lifestyle - Outdoors": Mountain,
   "Sports": Trophy,
-  "Transit & Weather": Tram,
+  "Transit & Weather": Bus,
   "Health": HeartPulse,
   "Utilities / Infrastructure": Wrench,
 };
