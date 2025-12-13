@@ -8,6 +8,7 @@ import { Feed } from "@/data/feeds";
 import { motion } from "framer-motion";
 import { HealthStatusIcon } from "./HealthStatusIcon";
 import { Badge } from "@/components/ui/badge";
+import { escapeHtml } from "@/lib/utils";
 interface FeedCardProps {
   feed: Feed;
   searchQuery: string;
@@ -16,11 +17,13 @@ interface FeedCardProps {
   category?: string;
 }
 const HighlightedText = React.memo(({ text, highlight }: { text: string; highlight: string }) => {
-  if (!highlight || !highlight.trim()) {
-    return <span>{text}</span>;
+  const safeText = escapeHtml(text);
+  const safeHighlight = escapeHtml(highlight);
+  if (!safeHighlight || !safeHighlight.trim()) {
+    return <span dangerouslySetInnerHTML={{ __html: safeText.replace(/&amp;#39;/g, "'") }} />;
   }
-  const regex = new RegExp(`(${highlight.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
-  const parts = text.split(regex);
+  const regex = new RegExp(`(${safeHighlight.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
+  const parts = safeText.split(regex);
   return (
     <span>
       {parts.map((part, i) =>
@@ -48,6 +51,8 @@ export function FeedCard({ feed, searchQuery, isFavorite, onToggleFavorite, cate
       toast.error("Failed to copy URL to clipboard.");
     });
   }, [feed.url, feed.title]);
+  const safeTitle = feed.title;
+  const safeUrl = feed.url;
   return (
     <motion.div
       layout
@@ -60,23 +65,23 @@ export function FeedCard({ feed, searchQuery, isFavorite, onToggleFavorite, cate
       <Card className="group flex flex-col h-full backdrop-blur-sm bg-white/90 dark:bg-slate-800/80 border border-gray-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300">
         <CardContent className="p-4 flex flex-col flex-grow">
           <div className="flex items-start gap-2 mb-1">
-            <HealthStatusIcon url={feed.url} />
+            <HealthStatusIcon url={safeUrl} />
             <p className="text-base font-semibold text-foreground flex-grow">
-              <HighlightedText text={feed.title} highlight={searchQuery} />
+              <HighlightedText text={safeTitle} highlight={searchQuery} />
             </p>
           </div>
-          {category && <Badge variant="secondary" className="text-xs mb-2 self-start ml-6">{category}</Badge>}
-          <p className="text-xs text-muted-foreground truncate mb-4" aria-hidden="true">{feed.url}</p>
+          {category && <Badge variant="secondary" className="text-xs mb-2 self-start ml-6">{escapeHtml(category)}</Badge>}
+          <p className="text-xs text-muted-foreground truncate mb-4" aria-hidden="true">{escapeHtml(safeUrl)}</p>
           <div className="mt-auto flex items-center gap-2">
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={() => onToggleFavorite(feed.url)}
+                    onClick={() => onToggleFavorite(safeUrl)}
                     variant="ghost"
                     size="icon"
                     className="h-9 w-9 shrink-0 text-muted-foreground hover:text-yellow-500 transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500"
-                    aria-label={`Toggle ${isFavorite ? 'remove' : 'add'} "${feed.title}" to favorites`}
+                    aria-label={`Toggle ${isFavorite ? 'remove' : 'add'} "${safeTitle}" to favorites`}
                   >
                     <Star className={`h-5 w-5 transition-all duration-200 ${isFavorite ? 'fill-yellow-400 text-yellow-500' : 'fill-transparent'}`} />
                   </Button>
@@ -94,7 +99,7 @@ export function FeedCard({ feed, searchQuery, isFavorite, onToggleFavorite, cate
                   ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white"
                   : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-sm"
               }`}
-              aria-label={`Copy URL for ${feed.title}`}
+              aria-label={`Copy URL for ${safeTitle}`}
             >
               {copied ? (
                 <>
