@@ -5,7 +5,7 @@ export function useIntersectionObserver(
   callback: IntersectionObserverCallback,
   options: IntersectionObserverInit = {}
 ) {
-  const memoizedOptions = useMemo(() => options, [options]);
+  const memoizedOptions = useMemo(() => options, [options.root, options.rootMargin, options.threshold]);
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
