@@ -80,8 +80,7 @@ export function HomePage() {
   const [isEditSheetOpen, setEditSheetOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const storageMode = usePrivacyStore(s => s.storageMode);
-  const favoriteUrls = useFavoritesStore(s => s.favoriteUrls);
-  const stableFavoriteUrls = React.useMemo(() => favoriteUrls, [JSON.stringify(favoriteUrls)]);
+const favoriteCount = useFavoritesStore(s => s.favoriteUrls.length);
   const isFavorite = useFavoritesStore(s => s.isFavorite);
   const toggleFavorite = useFavoritesStore(s => s.toggleFavorite);
   const getFavoriteFeeds = useFavoritesStore(s => s.getFavoriteFeeds);
@@ -89,8 +88,8 @@ export function HomePage() {
   const toggleShowFavoritesOnly = useFavoritesStore(s => s.toggleShowFavoritesOnly);
   const loadFavorites = useFavoritesStore(s => s.loadFromStorage);
   const healthChecksEnabled = usePrivacyStore(s => s.healthChecksEnabled);
-  const categorizedFeeds = useFeedsStore(s => s.categorizedFeeds);
-  const stableCategorizedFeeds = React.useMemo(() => categorizedFeeds, [JSON.stringify(categorizedFeeds)]);
+const categorizedFeeds = useFeedsStore(s => s.categorizedFeeds);
+const stableCategorizedFeeds = useMemo(() => categorizedFeeds, [categorizedFeeds]);
   const getFlatFeeds = useFeedsStore(s => s.getFlatFeeds);
   const loadFeeds = useFeedsStore(s => s.loadFromStorage);
   const checkHealth = useHealthStore(s => s.checkHealth);
@@ -127,7 +126,7 @@ export function HomePage() {
       let score = 0;
       const titleLower = feed.title.toLowerCase();
       const urlLower = feed.url.toLowerCase();
-      const category = Object.keys(stableCategorizedFeeds).find(cat => stableCategorizedFeeds[cat].some(f => f.url === feed.url)) || '';
+      const category = Object.keys(categorizedFeeds).find(cat => categorizedFeeds[cat].some(f => f.url === feed.url)) || '';
       queryTokens.forEach(token => {
         if (titleLower.includes(token)) score += 2;
         if (urlLower.includes(token)) score += 1;
@@ -146,15 +145,15 @@ export function HomePage() {
       totalPages: pages,
       searchResultCount: total,
     };
-  }, [searchQuery, showFavoritesOnly, getFavoriteFeeds, getFlatFeeds, stableCategorizedFeeds, currentPage]);
+  }, [searchQuery, showFavoritesOnly, getFavoriteFeeds, getFlatFeeds, categorizedFeeds, currentPage]);
   const categorizedAndFilteredFeeds = useMemo(() => {
     if (searchQuery.trim()) return {};
     if (showFavoritesOnly) {
         return { "Favorites": getFavoriteFeeds() };
     }
-    return stableCategorizedFeeds;
-  }, [searchQuery, showFavoritesOnly, getFavoriteFeeds, stableCategorizedFeeds]);
-  const totalFeeds = useMemo(() => getFlatFeeds().length, [getFlatFeeds]);
+    return categorizedFeeds;
+  }, [searchQuery, showFavoritesOnly, getFavoriteFeeds, categorizedFeeds]);
+  const totalFeedsCount = useFeedsStore(s => Object.values(s.categorizedFeeds).reduce((sum, cat) => sum + cat.length, 0));
   const handleClearSearch = useCallback(() => {
     setSearchQuery("");
     searchInputRef.current?.focus();
@@ -169,7 +168,7 @@ export function HomePage() {
                 LV Intelligence <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-emerald-600 bg-clip-text text-transparent">Feed Index</span>
               </h1>
               <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400">
-                {totalFeeds}+ Categorized RSS/Atom Feeds for the Lehigh Valley Region
+                {totalFeedsCount}+ Categorized RSS/Atom Feeds for the Lehigh Valley Region
               </p>
               <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
                  <Button onClick={generateAndDownloadOpml} className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500" size="lg">
@@ -204,7 +203,7 @@ export function HomePage() {
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Input ref={searchInputRef} type="text" placeholder={`Search ${totalFeeds}+ feeds...`} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-11 pr-10 h-11 py-2.5 text-base rounded-xl bg-transparent border-none focus:ring-2 focus:ring-indigo-500" aria-label="Search feeds" />
+                            <Input ref={searchInputRef} type="text" placeholder={`Search ${totalFeedsCount}+ feeds...`} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-11 pr-10 h-11 py-2.5 text-base rounded-xl bg-transparent border-none focus:ring-2 focus:ring-indigo-500" aria-label="Search feeds" />
                           </TooltipTrigger>
                           <TooltipContent><p>Shortcut: <kbd className="font-sans bg-gray-200 dark:bg-slate-700 rounded px-1.5 py-0.5 text-xs">S</kbd></p></TooltipContent>
                         </Tooltip>
@@ -217,7 +216,7 @@ export function HomePage() {
                           <Button variant="ghost" onClick={toggleShowFavoritesOnly} className="flex items-center justify-center sm:justify-start gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700/50">
                             <Star className={`h-5 w-5 transition-colors ${showFavoritesOnly ? 'text-yellow-500 fill-yellow-400' : 'text-muted-foreground'}`} />
                             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Favorites</span>
-                            <Badge variant={showFavoritesOnly ? "default" : "secondary"}>{stableFavoriteUrls.length}</Badge>
+                            <Badge variant={showFavoritesOnly ? "default" : "secondary"}>{favoriteCount}</Badge>
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent><p>Shortcut: <kbd className="font-sans bg-gray-200 dark:bg-slate-700 rounded px-1.5 py-0.5 text-xs">F</kbd></p></TooltipContent>
@@ -248,7 +247,7 @@ export function HomePage() {
                   ) : (
                     <motion.div key="no-results" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-16">
                       <p className="text-xl font-semibold text-gray-700 dark:text-gray-300">{showFavoritesOnly ? "No favorite feeds match your search." : `No feeds found for "${searchQuery}"`}</p>
-                      <p className="text-gray-500 dark:text-gray-400 mt-2">{showFavoritesOnly && stableFavoriteUrls.length === 0 ? "You haven't favorited any feeds yet." : "Try a different search term."}</p>
+                      <p className="text-gray-500 dark:text-gray-400 mt-2">{showFavoritesOnly && favoriteCount === 0 ? "You haven't favorited any feeds yet." : "Try a different search term."}</p>
                     </motion.div>
                   )
                 ) : (
