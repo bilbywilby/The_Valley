@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFeedsStore } from '@/stores/useFeedsStore';
-import { Feed } from '@/data/feeds';
+import { Feed } from '@/stores/useFeedsStore';
 import { toast } from 'sonner';
 import { Edit3, Plus, Trash2, Upload, Download, GripVertical } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';

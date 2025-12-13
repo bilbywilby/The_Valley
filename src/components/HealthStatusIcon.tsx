@@ -13,8 +13,15 @@ const statusConfig = {
   loading: { Icon: Loader2, color: 'text-amber-500', label: 'Checking...' },
   unknown: { Icon: HelpCircle, color: 'text-muted-foreground', label: 'Unknown Status' },
 };
+const CACHE_DURATION = 60 * 60 * 1000;
 export function HealthStatusIcon({ url }: HealthStatusIconProps) {
-  const status = useHealthStore((state) => state.getStatus(url));
+  const statuses = useHealthStore((s) => s.statuses) ?? {};
+  const entry = statuses[url];
+  const status = !entry
+    ? 'unknown'
+    : Date.now() - entry.timestamp > CACHE_DURATION
+    ? 'unknown'
+    : entry.status;
   const { Icon, color, label } = statusConfig[status];
   const isClickable = status === 'unknown';
   const handleInfoClick = () => {
