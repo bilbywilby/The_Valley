@@ -40,9 +40,12 @@ export const useHealthStore = create<HealthState>()(
             body: JSON.stringify({ urls }),
           });
           if (!response.ok) throw new Error('Health check API failed');
-          const { statuses: newStatuses } = await response.json<{ statuses: Record<string, 'ok' | 'error'> }>();
+          const data = await response.json();
+          const newStatuses = data.statuses as Record<string, 'ok' | 'error'>;
           const updatedStatuses = Object.entries(newStatuses).reduce((acc, [url, status]) => {
-            acc[url] = { status, timestamp: now };
+            if (typeof status === 'string' && (status === 'ok' || status === 'error')) {
+              acc[url] = { status: status as HealthStatus, timestamp: now };
+            }
             return acc;
           }, {} as Record<string, { status: HealthStatus; timestamp: number }>);
           set(state => ({ statuses: { ...state.statuses, ...updatedStatuses } }));
@@ -65,11 +68,4 @@ export const useHealthStore = create<HealthState>()(
       skipHydration: true,
     }
   )
-);
-usePrivacyStore.subscribe(
-  (state, prevState) => {
-    if (state.enableLocalStorage && !prevState.enableLocalStorage) {
-      useHealthStore.persist.rehydrate();
-    }
-  }
 );

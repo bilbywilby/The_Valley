@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { categorizedFeeds as initialFeedsData, Feed } from '@/data/feeds';
-import { usePrivacyStore } from './usePrivacyStore';
 export interface FeedCategory {
   category: string;
   feeds: Feed[];
@@ -117,12 +116,4 @@ export const useFeedsStore = create<FeedsState>()(
       skipHydration: true, // We will manually hydrate based on privacy settings
     }
   )
-);
-// Manual hydration logic, called from HomePage
-usePrivacyStore.subscribe(
-  (state, prevState) => {
-    if (state.enableLocalStorage && !prevState.enableLocalStorage) {
-      useFeedsStore.persist.rehydrate();
-    }
-  }
 );
