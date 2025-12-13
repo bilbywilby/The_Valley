@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { usePrivacyStore } from '@/stores/usePrivacyStore';
 export function useTheme() {
-  const enableLocalStorage = usePrivacyStore((state) => state.enableLocalStorage);
+  const enableLocalStorage = usePrivacyStore((state) => state.storageMode === 'local');
   const [isDark, setIsDark] = useState(() => {
     if (enableLocalStorage) {
       const savedTheme = localStorage.getItem('theme');

@@ -12,7 +12,8 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { generateAndDownloadOpml } from "@/lib/opml-generator";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { usePrivacyStore } from "@/stores/usePrivacyStore";
-import { useFeedsStore, Feed } from "@/stores/useFeedsStore";
+import { useFeedsStore } from "@/stores/useFeedsStore";
+import { Feed } from "@/data/feeds";
 import { useHealthStore } from "@/stores/useHealthStore";
 import { PrivacySettingsSheet } from "@/components/PrivacySettingsSheet";
 import { EditFeedsSheet } from "@/components/EditFeedsSheet";
@@ -109,7 +110,6 @@ const loadHealth = useHealthStore(s => s.loadFromStorage);
   const boundToggleFavorite = useCallback((url: string) => toggleFavorite(url), [toggleFavorite]);
   const { paginatedResults, totalPages, searchResultCount } = useMemo(() => {
     if (!searchQuery.trim()) {
-      setCurrentPage(1);
       return { paginatedResults: [], totalPages: 0, searchResultCount: 0 };
     }
     const sourceFeeds = showFavoritesOnly ? getFavoriteFeeds() : getFlatFeeds();
