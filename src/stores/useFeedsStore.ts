@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { categorizedFeeds as initialFeedsData, Feed } from '@/data/feeds';
 import { usePrivacyStore } from './usePrivacyStore';
+export type { Feed } from '@/data/feeds';
 const FEEDS_STORAGE_KEY = 'lv-feeds-storage';
 export interface FeedCategory {
   category: string;

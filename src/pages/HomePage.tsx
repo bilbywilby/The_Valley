@@ -12,8 +12,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { generateAndDownloadOpml } from "@/lib/opml-generator";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { usePrivacyStore } from "@/stores/usePrivacyStore";
-import { useFeedsStore } from "@/stores/useFeedsStore";
-import { Feed } from "@/data/feeds";
+import { useFeedsStore, Feed } from "@/stores/useFeedsStore";
 import { useHealthStore } from "@/stores/useHealthStore";
 import { PrivacySettingsSheet } from "@/components/PrivacySettingsSheet";
 import { EditFeedsSheet } from "@/components/EditFeedsSheet";
@@ -179,23 +178,25 @@ const loadHealth = useHealthStore(s => s.loadFromStorage);
                 <p className="font-medium text-sm text-indigo-800 dark:text-indigo-200">This is an index only. Use "Copy URL" to subscribe to feeds in your RSS reader.</p>
               </div>
             </header>
-            <div id="search-section" role="search" className="sticky top-4 z-50 mb-10">
-              <div className="relative max-w-2xl mx-auto backdrop-blur-sm bg-white/90 dark:bg-slate-800/80 border border-gray-200/50 dark:border-slate-700/50 rounded-2xl shadow-lg p-2">
-                 <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input ref={searchInputRef} type="text" placeholder={`Search ${totalFeeds}+ feeds...`} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-12 pr-10 py-3 h-12 text-base rounded-xl bg-transparent border-none focus:ring-2 focus:ring-indigo-500" aria-label="Search feeds" />
-                    {searchQuery.length > 0 && (<Button onClick={handleClearSearch} variant="ghost" size="sm" className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full p-0 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500" aria-label="Clear search"><X className="h-4 w-4" /></Button>)}
-                 </div>
-                 <div className="flex items-center justify-center pt-2">
-                    <div className="flex items-center space-x-2 cursor-pointer p-2 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700/50" onClick={toggleShowFavoritesOnly} onKeyDown={(e) => e.key === 'Enter' && toggleShowFavoritesOnly()} role="checkbox" aria-checked={showFavoritesOnly} tabIndex={0}>
-                      <motion.div className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center ${showFavoritesOnly ? 'bg-indigo-600 border-indigo-600' : 'border-gray-400'}`} animate={{ scale: showFavoritesOnly ? 1 : 0.9 }}>
-                        {showFavoritesOnly && <motion.div initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}><svg viewBox="0 0 12 12" className="w-3 h-3"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" /></svg></motion.div>}
-                      </motion.div>
-                      <Label htmlFor="favorites-only-checkbox" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">Show Favorites Only</Label>
+            <div id="search-section" role="search" className="sticky top-2 sm:top-[1.25rem] z-50 mb-8">
+              <div className="relative max-w-2xl mx-auto backdrop-blur-sm bg-white/90 dark:bg-slate-800/80 border border-gray-200/50 dark:border-slate-700/50 rounded-2xl shadow-lg p-3">
+                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Input ref={searchInputRef} type="text" placeholder={`Search ${totalFeeds}+ feeds...`} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-11 pr-10 h-11 py-2.5 text-base rounded-xl bg-transparent border-none focus:ring-2 focus:ring-indigo-500" aria-label="Search feeds" />
+                      {searchQuery.length > 0 && (<Button onClick={handleClearSearch} variant="ghost" size="sm" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full p-0 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500" aria-label="Clear search"><X className="h-4 w-4" /></Button>)}
+                    </div>
+                    <div className="flex items-center justify-center sm:justify-start">
+                      <div className="flex items-center space-x-2 cursor-pointer p-1 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700/50" onClick={toggleShowFavoritesOnly} onKeyDown={(e) => e.key === 'Enter' && toggleShowFavoritesOnly()} role="checkbox" aria-checked={showFavoritesOnly} tabIndex={0}>
+                        <motion.div className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center ${showFavoritesOnly ? 'bg-indigo-600 border-indigo-600' : 'border-gray-400'}`} animate={{ scale: showFavoritesOnly ? 1 : 0.9 }}>
+                          {showFavoritesOnly && <motion.div initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}><svg viewBox="0 0 12 12" className="w-3 h-3"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" /></svg></motion.div>}
+                        </motion.div>
+                        <Label htmlFor="favorites-only-checkbox" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">Show Favorites</Label>
+                      </div>
                     </div>
                  </div>
               </div>
-              {searchQuery && (<div className="text-center mt-2"><Badge variant="secondary">{searchResultCount} result{searchResultCount === 1 ? '' : 's'} found</Badge></div>)}
+              {searchQuery && (<div className="text-center mt-1"><Badge variant="secondary">{searchResultCount} result{searchResultCount === 1 ? '' : 's'} found</Badge></div>)}
             </div>
             <div className="space-y-16 md:space-y-24">
               <AnimatePresence mode="popLayout">
@@ -231,7 +232,7 @@ const loadHealth = useHealthStore(s => s.loadFromStorage);
           </div>
         </main>
         <footer className="mt-12 py-6 border-t border-gray-200 dark:border-slate-700 text-center text-sm text-muted-foreground bg-white/80 dark:bg-slate-900/50 backdrop-blur-sm">
-          Built with ❤️ at Cloudflare | Data is stored in your browser's {storageMode === 'local' ? 'persistent' : 'session'} storage.
+          Built with ❤��� at Cloudflare | Data is stored in your browser's {storageMode === 'local' ? 'persistent' : 'session'} storage.
         </footer>
         <Toaster richColors position="top-right" />
         <PrivacySettingsSheet open={isPrivacySheetOpen} onOpenChange={setPrivacySheetOpen} />
