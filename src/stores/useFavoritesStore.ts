@@ -1,58 +1,40 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import { categorizedFeeds, Feed } from '@/data/feeds';
 interface FavoritesState {
   favoriteUrls: string[];
-  /** Whether the UI should filter to only show favorite feeds */
-  filterFavorites: boolean;
-  /** Toggle a feed URL in the favorites list */
   toggleFavorite: (url: string) => void;
-  /** Set the filter‑favorites flag */
-  setFilterFavorites: (enabled: boolean) => void;
-  /** Toggle the filter‑favorites flag */
-  toggleFilterFavorites: () => void;
-  /** Return true if a URL is in the favorites list */
   isFavorite: (url: string) => boolean;
-  /** Number of favorite URLs – useful as a stable selector */
-  favoritesCount: () => number;
-  /** Get the full Feed objects that are favorited */
   getFavoriteFeeds: () => Feed[];
+  loadFromStorage: () => void;
 }
-export const useFavoritesStore = create<FavoritesState>()(
-  persist(
-    (set, get) => ({
-      favoriteUrls: [],
-filterFavorites: false,
-toggleFavorite: (url) =>
-  set((state) => {
-    const isFavorite = state.favoriteUrls.includes(url);
-    if (isFavorite) {
-      return { favoriteUrls: state.favoriteUrls.filter((favUrl) => favUrl !== url) };
-    } else {
-      return { favoriteUrls: [...state.favoriteUrls, url] };
-    }
-  }),
-
-// New action: explicitly set the filter flag
-setFilterFavorites: (enabled) => set({ filterFavorites: enabled }),
-
-// New action: toggle the filter flag
-toggleFilterFavorites: () => set((state) => ({ filterFavorites: !state.filterFavorites })),
-
-isFavorite: (url) => get().favoriteUrls.includes(url),
-
-// New getter: stable count of favorites
-favoritesCount: () => get().favoriteUrls.length,
-
-getFavoriteFeeds: () => {
-  const allFeeds = Object.values(categorizedFeeds).flat();
-  const favoriteUrlsSet = new Set(get().favoriteUrls);
-  return allFeeds.filter(feed => favoriteUrlsSet.has(feed.url));
-},
+export const useFavoritesStore = create<FavoritesState>()((set, get) => ({
+  favoriteUrls: [],
+  toggleFavorite: (url) =>
+    set((state) => {
+      const isFavorite = state.favoriteUrls.includes(url);
+      if (isFavorite) {
+        return { favoriteUrls: state.favoriteUrls.filter((favUrl) => favUrl !== url) };
+      } else {
+        return { favoriteUrls: [...state.favoriteUrls, url] };
+      }
     }),
-    {
-      name: 'lv-feed-favorites-storage',
-      storage: createJSONStorage(() => localStorage),
+  isFavorite: (url) => get().favoriteUrls.includes(url),
+  getFavoriteFeeds: () => {
+    const allFeeds = Object.values(categorizedFeeds).flat();
+    const favoriteUrlsSet = new Set(get().favoriteUrls);
+    return allFeeds.filter(feed => favoriteUrlsSet.has(feed.url));
+  },
+  loadFromStorage: () => {
+    try {
+      const item = localStorage.getItem('lv-feed-favorites-storage');
+      if (item) {
+        const parsed = JSON.parse(item);
+        if (parsed.state && Array.isArray(parsed.state.favoriteUrls)) {
+          set({ favoriteUrls: parsed.state.favoriteUrls });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load favorites from localStorage", error);
     }
-  )
-);
+  },
+}));

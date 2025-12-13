@@ -16,7 +16,7 @@ const HighlightedText = React.memo(({ text, highlight }: { text: string; highlig
   if (!highlight || !highlight.trim()) {
     return <span>{text}</span>;
   }
-const regex = new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'i');
+  const regex = new RegExp(`(${highlight.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
   const parts = text.split(regex);
   return (
     <span>
@@ -32,6 +32,7 @@ const regex = new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`
     </span>
   );
 });
+HighlightedText.displayName = 'HighlightedText';
 export function FeedCard({ feed, searchQuery, isFavorite, onToggleFavorite }: FeedCardProps) {
   const [copied, setCopied] = useState(false);
   const handleCopy = useCallback(() => {

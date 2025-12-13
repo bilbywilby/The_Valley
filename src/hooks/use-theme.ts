@@ -1,24 +1,31 @@
 import { useState, useEffect } from 'react';
-
+import { usePrivacyStore } from '@/stores/usePrivacyStore';
 export function useTheme() {
+  const enableLocalStorage = usePrivacyStore((state) => state.enableLocalStorage);
   const [isDark, setIsDark] = useState(() => {
-    const savedTheme = localStorage.getItem('theme');
-    return savedTheme ? savedTheme === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (enableLocalStorage) {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme) {
+        return savedTheme === 'dark';
+      }
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
-
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
+      if (enableLocalStorage) {
+        localStorage.setItem('theme', 'dark');
+      }
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
+      if (enableLocalStorage) {
+        localStorage.setItem('theme', 'light');
+      }
     }
-  }, [isDark]);
-
+  }, [isDark, enableLocalStorage]);
   const toggleTheme = () => {
-    setIsDark(!isDark);
+    setIsDark(prev => !prev);
   };
-
   return { isDark, toggleTheme };
 }
