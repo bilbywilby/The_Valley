@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Label } from "@/components/ui/label";
 import { generateAndDownloadOpml } from "@/lib/opml-generator";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { usePrivacyStore } from "@/stores/usePrivacyStore";
@@ -109,11 +110,11 @@ export function HomePage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   // Stores
   const { favoriteUrls, isFavorite, toggleFavorite, getFavoriteFeeds, showFavoritesOnly, toggleShowFavoritesOnly, loadFromStorage } = useFavoritesStore();
-  const { enableLocalStorage, healthChecksEnabled } = usePrivacyStore();
+  const enableLocalStorage = usePrivacyStore(s => s.enableLocalStorage);
+  const healthChecksEnabled = usePrivacyStore(s => s.healthChecksEnabled);
   const categorizedFeeds = useFeedsStore(s => s.categorizedFeeds);
   const getFlatFeeds = useFeedsStore(s => s.getFlatFeeds);
   const checkHealth = useHealthStore(s => s.checkHealth);
-  const isCheckingHealth = useHealthStore(s => s.isChecking);
   // Effect for initializing stores from localStorage based on privacy settings
   useEffect(() => {
     if (enableLocalStorage) {
@@ -192,7 +193,7 @@ export function HomePage() {
                     onClick={() => setEditSheetOpen(true)}
                     variant="outline"
                     size="lg"
-                    className="font-semibold shadow-sm hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
+                    className="font-semibold shadow-sm hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500/50"
                   >
                     <Edit3 className="mr-2 h-5 w-5" />
                     Edit Feeds
@@ -201,7 +202,7 @@ export function HomePage() {
                     onClick={() => setPrivacySheetOpen(true)}
                     variant="ghost"
                     size="icon"
-                    className="h-12 w-12 text-muted-foreground hover:text-foreground transition-colors"
+                    className="h-12 w-12 text-muted-foreground hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500/50"
                     aria-label="Privacy settings"
                   >
                     <Settings className="h-6 w-6" />
@@ -233,18 +234,22 @@ export function HomePage() {
                         </Button>
                     )}
                  </div>
-                 <div className="flex items-center justify-center space-x-2 pt-2">
+                 <div className="flex items-center justify-center pt-2">
                     <div
-                      className="flex items-center space-x-2 cursor-pointer"
+                      className="flex items-center space-x-2 cursor-pointer p-2 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700/50"
                       onClick={toggleShowFavoritesOnly}
+                      onKeyDown={(e) => e.key === 'Enter' && toggleShowFavoritesOnly()}
+                      role="checkbox"
+                      aria-checked={showFavoritesOnly}
+                      tabIndex={0}
                     >
                       <motion.div
-                        className={`w-4 h-4 rounded-sm border-2 ${showFavoritesOnly ? 'bg-indigo-600 border-indigo-600' : 'border-gray-400'}`}
-                        animate={{ scale: showFavoritesOnly ? 1 : 0.8 }}
+                        className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center ${showFavoritesOnly ? 'bg-indigo-600 border-indigo-600' : 'border-gray-400'}`}
+                        animate={{ scale: showFavoritesOnly ? 1 : 0.9 }}
                       >
-                        {showFavoritesOnly && <motion.div initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="white" strokeWidth="3" fill="none" /></svg></motion.div>}
+                        {showFavoritesOnly && <motion.div initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}><svg viewBox="0 0 12 12" className="w-3 h-3"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" /></svg></motion.div>}
                       </motion.div>
-                      <Label htmlFor="favorites-only" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">Show Favorites Only</Label>
+                      <Label htmlFor="favorites-only-checkbox" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">Show Favorites Only</Label>
                     </div>
                  </div>
               </div>
