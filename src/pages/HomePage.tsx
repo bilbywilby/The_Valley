@@ -198,7 +198,7 @@ const loadHealth = useHealthStore(s => s.loadFromStorage);
               {searchQuery && (<div className="text-center mt-2"><Badge variant="secondary">{searchResultCount} result{searchResultCount === 1 ? '' : 's'} found</Badge></div>)}
             </div>
             <div className="space-y-16 md:space-y-24">
-              <AnimatePresence mode="wait">
+              <AnimatePresence mode="popLayout">
                 {searchQuery.trim() ? (
                   paginatedResults.length > 0 ? (
                     <motion.div key="search-results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
