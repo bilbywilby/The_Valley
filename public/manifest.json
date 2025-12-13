@@ -1,0 +1,23 @@
+{
+  "name": "LV Intelligence Feed Index",
+  "short_name": "LV Feeds",
+  "description": "A premium, searchable directory of 140+ Lehigh Valley RSS feeds.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "https://placehold.co/192x192/4f46e5/ffffff.png?text=LV",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://placehold.co/512x512/4f46e5/ffffff.png?text=LV",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
