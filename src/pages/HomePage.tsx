@@ -1,138 +1,121 @@
-// Home page of the app.
-// Currently a demo placeholder "please wait" screen.
-// Replace this file with your actual app UI. Do not delete it to use some other file as homepage. Simply replace the entire contents of this file.
-
-import { useEffect, useMemo, useState } from 'react'
-import { Sparkles } from 'lucide-react'
-
-import { ThemeToggle } from '@/components/ThemeToggle'
-import { HAS_TEMPLATE_DEMO, TemplateDemo } from '@/components/TemplateDemo'
-import { Button } from '@/components/ui/button'
-import { Toaster, toast } from '@/components/ui/sonner'
-
-function formatDuration(ms: number): string {
-  const total = Math.max(0, Math.floor(ms / 1000))
-  const m = Math.floor(total / 60)
-  const s = total % 60
-  return `${m}:${s.toString().padStart(2, '0')}`
-}
-
+import React, { useState, useMemo } from "react";
+import { Download, Search, Info } from "lucide-react";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Toaster } from "@/components/ui/sonner";
+import { categorizedFeeds } from "@/data/feeds";
+import { FeedCard } from "@/components/feed-card";
+import { generateAndDownloadOpml } from "@/lib/opml-generator";
+import { motion, AnimatePresence } from "framer-motion";
 export function HomePage() {
-  const [coins, setCoins] = useState(0)
-  const [isRunning, setIsRunning] = useState(false)
-  const [startedAt, setStartedAt] = useState<number | null>(null)
-  const [elapsedMs, setElapsedMs] = useState(0)
-
-  useEffect(() => {
-    if (!isRunning || startedAt === null) return
-
-    const t = setInterval(() => {
-      setElapsedMs(Date.now() - startedAt)
-    }, 250)
-
-    return () => clearInterval(t)
-  }, [isRunning, startedAt])
-
-  const formatted = useMemo(() => formatDuration(elapsedMs), [elapsedMs])
-
-  const onPleaseWait = () => {
-    setCoins((c) => c + 1)
-
-    if (!isRunning) {
-      // Resume from the current elapsed time
-      setStartedAt(Date.now() - elapsedMs)
-      setIsRunning(true)
-      toast.success('Building your app…', {
-        description: "Hang tight — we're setting everything up.",
-      })
-      return
+  const [searchQuery, setSearchQuery] = useState("");
+  const filteredFeeds = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return categorizedFeeds;
     }
-
-    setIsRunning(false)
-    toast.info('Still working…', {
-      description: 'You can come back in a moment.',
-    })
-  }
-
-  const onReset = () => {
-    setCoins(0)
-    setIsRunning(false)
-    setStartedAt(null)
-    setElapsedMs(0)
-    toast('Reset complete')
-  }
-
-  const onAddCoin = () => {
-    setCoins((c) => c + 1)
-    toast('Coin added')
-  }
-
+    const lowercasedQuery = searchQuery.toLowerCase();
+    const filtered: Record<string, any[]> = {};
+    for (const category in categorizedFeeds) {
+      const matchingFeeds = categorizedFeeds[category].filter(
+        (feed) =>
+          feed.title.toLowerCase().includes(lowercasedQuery) ||
+          feed.url.toLowerCase().includes(lowercasedQuery)
+      );
+      if (matchingFeeds.length > 0) {
+        filtered[category] = matchingFeeds;
+      }
+    }
+    return filtered;
+  }, [searchQuery]);
+  const totalFeeds = useMemo(() => Object.values(categorizedFeeds).flat().length, []);
+  const searchResultCount = useMemo(() => Object.values(filteredFeeds).flat().length, [filteredFeeds]);
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-4 overflow-hidden relative">
-      <ThemeToggle />
-      <div className="absolute inset-0 bg-gradient-rainbow opacity-10 dark:opacity-20 pointer-events-none" />
-
-      <div className="text-center space-y-8 relative z-10 animate-fade-in w-full">
-        <div className="flex justify-center">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-primary floating">
-            <Sparkles className="w-8 h-8 text-white rotating" />
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <h1 className="text-5xl md:text-7xl font-display font-bold text-balance leading-tight">
-            Creating your <span className="text-gradient">app</span>
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto text-pretty">
-            Your application would be ready soon.
-          </p>
-        </div>
-
-        {HAS_TEMPLATE_DEMO ? (
-          <div className="max-w-5xl mx-auto text-left">
-            <TemplateDemo />
-          </div>
-        ) : (
-          <>
-            <div className="flex justify-center gap-4">
-              <Button
-                size="lg"
-                onClick={onPleaseWait}
-                className="btn-gradient px-8 py-4 text-lg font-semibold hover:-translate-y-0.5 transition-all duration-200"
-                aria-live="polite"
-              >
-                Please Wait
-              </Button>
-            </div>
-
-            <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
-              <div>
-                Time elapsed:{' '}
-                <span className="font-medium tabular-nums text-foreground">{formatted}</span>
+    <AppLayout>
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-12 md:py-16">
+            {/* Header */}
+            <header className="text-center mb-10 animate-fade-in">
+              <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-gray-100 mb-2 tracking-tight">
+                LV Intelligence Feed Index
+              </h1>
+              <p className="text-lg text-gray-600 dark:text-gray-400">
+                {totalFeeds}+ Categorized RSS/Atom Feeds for the Lehigh Valley Region
+              </p>
+              <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
+                 <Button
+                    onClick={generateAndDownloadOpml}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5"
+                    size="lg"
+                  >
+                    <Download className="mr-2 h-5 w-5" />
+                    Download Full OPML
+                  </Button>
               </div>
-              <div>
-                Coins:{' '}
-                <span className="font-medium tabular-nums text-foreground">{coins}</span>
+              <div className="mt-6 p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-200 rounded-lg shadow-sm flex items-center justify-center gap-2 max-w-2xl mx-auto">
+                <Info className="h-5 w-5 flex-shrink-0" />
+                <p className="font-medium text-sm">
+                  This is an index only. Use "Copy URL" to subscribe to feeds in your RSS reader.
+                </p>
+              </div>
+            </header>
+            {/* Search Bar */}
+            <div className="sticky top-4 z-40 mb-10">
+              <div className="relative max-w-2xl mx-auto">
+                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                 <Input
+                    type="text"
+                    placeholder={`Search ${totalFeeds}+ feeds... (e.g. "Police", "Allentown")`}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 h-12 text-base rounded-full shadow-lg bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500"
+                 />
               </div>
             </div>
-
-            <div className="flex justify-center gap-2">
-              <Button variant="outline" size="sm" onClick={onReset}>
-                Reset
-              </Button>
-              <Button variant="outline" size="sm" onClick={onAddCoin}>
-                Add Coin
-              </Button>
+            {/* Feed List */}
+            <div className="space-y-12">
+              <AnimatePresence>
+                {Object.keys(filteredFeeds).length > 0 ? (
+                  Object.entries(filteredFeeds).map(([category, feeds]) => (
+                    <motion.section
+                      key={category}
+                      id={category.replace(/\s+/g, '-').toLowerCase()}
+                      className="bg-white dark:bg-slate-800/50 p-4 sm:p-6 rounded-xl shadow-lg"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      layout
+                    >
+                      <h2 className="text-2xl sm:text-3xl font-bold text-indigo-700 dark:text-indigo-400 border-b border-indigo-100 dark:border-indigo-900 pb-3 mb-6">
+                        {category}
+                      </h2>
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {feeds.map((feed) => (
+                          <FeedCard key={feed.url} feed={feed} />
+                        ))}
+                      </div>
+                    </motion.section>
+                  ))
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center py-16"
+                  >
+                    <p className="text-xl font-semibold text-gray-700 dark:text-gray-300">No feeds found for "{searchQuery}"</p>
+                    <p className="text-gray-500 dark:text-gray-400 mt-2">Try a different search term.</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-          </>
-        )}
+          </div>
+        </main>
+        <footer className="mt-12 py-6 border-t border-gray-200 dark:border-slate-800 text-center text-sm text-gray-500 dark:text-gray-400">
+          Built with ❤️ at Cloudflare
+        </footer>
+        <Toaster richColors position="top-right" />
       </div>
-
-      <footer className="absolute bottom-8 text-center text-muted-foreground/80">
-        <p>Powered by Cloudflare</p>
-      </footer>
-
-      <Toaster richColors closeButton />
-    </div>
-  )
+    </AppLayout>
+  );
 }

@@ -1,73 +1,70 @@
-/* This is a demo sidebar. **COMPULSORY** Edit this file to customize the sidebar OR remove it from appLayout OR don't use appLayout at all */
 import React from "react";
-import { Home, Layers, Compass, Star, Settings, LifeBuoy } from "lucide-react";
+import { Rss, Newspaper, Building, Shield, Briefcase, GraduationCap, School, Users, Clapperboard, Utensils, Leaf, Mountain, Trophy, Tram, HeartPulse, Wrench } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
   SidebarHeader,
-  SidebarSeparator,
-  SidebarInput,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuAction,
   SidebarMenuBadge,
 } from "@/components/ui/sidebar";
-
+import { categorizedFeeds } from "@/data/feeds";
+const categoryIcons: { [key: string]: React.ElementType } = {
+  "News - Regional": Newspaper,
+  "News - Local": Newspaper,
+  "Gov - Municipal": Building,
+  "Gov - County": Building,
+  "Safety - Police & Courts": Shield,
+  "LV Business": Briefcase,
+  "Education - Higher Ed": GraduationCap,
+  "Education - K12": School,
+  "Community & Civic": Users,
+  "Media / Culture": Clapperboard,
+  "Lifestyle - Arts & Events": Clapperboard,
+  "Lifestyle - Food & Drink": Utensils,
+  "Lifestyle - Environment": Leaf,
+  "Lifestyle - Outdoors": Mountain,
+  "Sports": Trophy,
+  "Transit & Weather": Tram,
+  "Health": HeartPulse,
+  "Utilities / Infrastructure": Wrench,
+};
 export function AppSidebar(): JSX.Element {
+  const categories = Object.keys(categorizedFeeds);
+  const scrollToCategory = (e: React.MouseEvent<HTMLAnchorElement>, category: string) => {
+    e.preventDefault();
+    const element = document.getElementById(category.replace(/\s+/g, '-').toLowerCase());
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
   return (
     <Sidebar>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-1">
-          <div className="h-6 w-6 rounded-md bg-gradient-to-br from-indigo-500 to-purple-500" />
-          <span className="text-sm font-medium">Demo Sidebar</span>
+          <Rss className="h-6 w-6 text-indigo-500" />
+          <span className="text-sm font-medium">Feed Categories</span>
         </div>
-        <SidebarInput placeholder="Search" />
       </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive>
-                <a href="#"><Home /> <span>Home</span></a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <a href="#"><Layers /> <span>Projects</span></a>
-              </SidebarMenuButton>
-              <SidebarMenuAction>
-                <Star className="size-4" />
-              </SidebarMenuAction>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <a href="#"><Compass /> <span>Explore</span></a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroup>
-
-        <SidebarSeparator />
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Quick Links</SidebarGroupLabel>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <a href="#"><Star /> <span>Starred</span></a>
-              </SidebarMenuButton>
-              <SidebarMenuBadge>5</SidebarMenuBadge>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroup>
+      <SidebarContent className="pr-2">
+        <SidebarMenu>
+          {categories.map((category) => {
+            const Icon = categoryIcons[category] || Rss;
+            return (
+              <SidebarMenuItem key={category}>
+                <SidebarMenuButton asChild>
+                  <a href={`#${category.replace(/\s+/g, '-').toLowerCase()}`} onClick={(e) => scrollToCategory(e, category)}>
+                    <Icon className="w-4 h-4" />
+                    <span>{category}</span>
+                  </a>
+                </SidebarMenuButton>
+                <SidebarMenuBadge>{categorizedFeeds[category].length}</SidebarMenuBadge>
+              </SidebarMenuItem>
+            );
+          })}
+        </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter>
-        <div className="px-2 text-xs text-muted-foreground">A simple shadcn sidebar</div>
-      </SidebarFooter>
     </Sidebar>
   );
 }
