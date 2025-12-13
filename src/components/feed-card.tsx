@@ -22,28 +22,33 @@ export function FeedCard({ feed }: FeedCardProps) {
   };
   return (
     <motion.div
+      layoutId={`feed-${feed.url}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.3 }}
     >
-      <Card className="flex flex-col h-full bg-card/50 hover:bg-card/90 transition-colors duration-200 shadow-sm hover:shadow-md">
+      <Card className="flex flex-col h-full bg-card/50 hover:bg-card/90 transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-1">
         <CardContent className="p-4 flex flex-col flex-grow">
           <p className="font-semibold text-foreground mb-1 flex-grow">{feed.title}</p>
           <p className="text-xs text-muted-foreground truncate mb-4">{feed.url}</p>
           <Button
             onClick={handleCopy}
-            variant={copied ? "secondary" : "default"}
             size="sm"
-            className="w-full mt-auto transition-all duration-200 bg-indigo-600 hover:bg-indigo-700 text-white"
+            className={`w-full mt-auto group transition-all duration-200 hover:scale-105 hover:shadow-glow active:scale-95 ${
+              copied
+                ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                : "bg-indigo-600 hover:bg-indigo-700 text-white"
+            }`}
           >
             {copied ? (
               <>
-                <Check className="-ml-1 mr-2 h-4 w-4" />
+                <Check className="-ml-1 mr-2 h-4 w-4 transition-transform group-hover:scale-110" />
                 Copied!
               </>
             ) : (
               <>
-                <Copy className="-ml-1 mr-2 h-4 w-4" />
+                <Copy className="-ml-1 mr-2 h-4 w-4 transition-transform group-hover:scale-110" />
                 Copy URL
               </>
             )}
