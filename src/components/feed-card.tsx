@@ -7,11 +7,13 @@ import { toast } from "sonner";
 import { Feed } from "@/data/feeds";
 import { motion } from "framer-motion";
 import { HealthStatusIcon } from "./HealthStatusIcon";
+import { Badge } from "@/components/ui/badge";
 interface FeedCardProps {
   feed: Feed;
   searchQuery: string;
   isFavorite: boolean;
   onToggleFavorite: (url: string) => void;
+  category?: string;
 }
 const HighlightedText = React.memo(({ text, highlight }: { text: string; highlight: string }) => {
   if (!highlight || !highlight.trim()) {
@@ -34,7 +36,7 @@ const HighlightedText = React.memo(({ text, highlight }: { text: string; highlig
   );
 });
 HighlightedText.displayName = 'HighlightedText';
-export function FeedCard({ feed, searchQuery, isFavorite, onToggleFavorite }: FeedCardProps) {
+export function FeedCard({ feed, searchQuery, isFavorite, onToggleFavorite, category }: FeedCardProps) {
   const [copied, setCopied] = useState(false);
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(feed.url).then(() => {
@@ -57,12 +59,13 @@ export function FeedCard({ feed, searchQuery, isFavorite, onToggleFavorite }: Fe
     >
       <Card className="group flex flex-col h-full backdrop-blur-sm bg-white/90 dark:bg-slate-800/80 border border-gray-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300">
         <CardContent className="p-4 flex flex-col flex-grow">
-          <div className="flex items-start gap-2 mb-2">
+          <div className="flex items-start gap-2 mb-1">
             <HealthStatusIcon url={feed.url} />
             <p className="text-base font-semibold text-foreground flex-grow">
               <HighlightedText text={feed.title} highlight={searchQuery} />
             </p>
           </div>
+          {category && <Badge variant="secondary" className="text-xs mb-2 self-start ml-6">{category}</Badge>}
           <p className="text-xs text-muted-foreground truncate mb-4" aria-hidden="true">{feed.url}</p>
           <div className="mt-auto flex items-center gap-2">
             <TooltipProvider delayDuration={200}>

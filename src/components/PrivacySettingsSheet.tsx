@@ -29,8 +29,8 @@ interface PrivacySettingsSheetProps {
   onOpenChange: (open: boolean) => void;
 }
 export function PrivacySettingsSheet({ open, onOpenChange }: PrivacySettingsSheetProps) {
-  const enableLocalStorage = usePrivacyStore((state) => state.enableLocalStorage);
-  const toggleLocalStorage = usePrivacyStore((state) => state.toggleLocalStorage);
+  const storageMode = usePrivacyStore((state) => state.storageMode);
+  const toggleStorageMode = usePrivacyStore((state) => state.toggleStorageMode);
   const healthChecksEnabled = usePrivacyStore((state) => state.healthChecksEnabled);
   const toggleHealthChecks = usePrivacyStore((state) => state.toggleHealthChecks);
   const clearAllData = usePrivacyStore((state) => state.clearAllData);
@@ -49,18 +49,18 @@ export function PrivacySettingsSheet({ open, onOpenChange }: PrivacySettingsShee
         <div className="flex-grow py-4 space-y-6">
           <div className="p-4 border rounded-lg bg-background">
             <div className="flex items-center justify-between">
-              <Label htmlFor="local-storage-switch" className="font-semibold text-base">
-                Enable Local Storage
+              <Label htmlFor="persistent-storage-switch" className="font-semibold text-base">
+                Enable Persistent Storage
               </Label>
               <Switch
-                id="local-storage-switch"
-                checked={enableLocalStorage}
-                onCheckedChange={toggleLocalStorage}
-                aria-label="Toggle local storage persistence"
+                id="persistent-storage-switch"
+                checked={storageMode === 'local'}
+                onCheckedChange={toggleStorageMode}
+                aria-label="Toggle persistent storage"
               />
             </div>
             <p className="text-sm text-muted-foreground mt-2">
-              Turn this on to save your favorite feeds, custom feeds, and theme preference between visits. When off, all settings are reset when you close the tab.
+              Default is session storage (clears when tab closes). Turn this on to save favorites and custom feeds across browser sessions.
             </p>
           </div>
           <div className="p-4 border rounded-lg bg-background">
@@ -77,7 +77,7 @@ export function PrivacySettingsSheet({ open, onOpenChange }: PrivacySettingsShee
               />
             </div>
             <p className="text-sm text-muted-foreground mt-2">
-              Opt-in to allow the app to check if feed URLs are active. This sends URLs to a privacy-respecting Cloudflare Worker. Statuses are cached in your browser for 1 hour.
+              Opt-in to allow the app to check if feed URLs are active. This sends URLs to a privacy-respecting Cloudflare Worker. Statuses are cached in your browser.
             </p>
           </div>
           <div className="p-4 border border-destructive/50 rounded-lg bg-destructive/5">
