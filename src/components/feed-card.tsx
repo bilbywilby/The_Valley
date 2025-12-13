@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { toast } from "sonner";
 import { Feed } from "@/data/feeds";
 import { motion } from "framer-motion";
+import { HealthStatusIcon } from "./HealthStatusIcon";
 interface FeedCardProps {
   feed: Feed;
   searchQuery: string;
@@ -56,9 +57,12 @@ export function FeedCard({ feed, searchQuery, isFavorite, onToggleFavorite }: Fe
     >
       <Card className="group flex flex-col h-full backdrop-blur-sm bg-white/90 dark:bg-slate-800/80 border border-gray-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300">
         <CardContent className="p-4 flex flex-col flex-grow">
-          <p className="text-base font-semibold text-foreground mb-2 flex-grow">
-            <HighlightedText text={feed.title} highlight={searchQuery} />
-          </p>
+          <div className="flex items-start gap-2 mb-2">
+            <HealthStatusIcon url={feed.url} />
+            <p className="text-base font-semibold text-foreground flex-grow">
+              <HighlightedText text={feed.title} highlight={searchQuery} />
+            </p>
+          </div>
           <p className="text-xs text-muted-foreground truncate mb-4" aria-hidden="true">{feed.url}</p>
           <div className="mt-auto flex items-center gap-2">
             <TooltipProvider delayDuration={200}>
