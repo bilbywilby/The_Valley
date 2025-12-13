@@ -98,6 +98,7 @@ export function HomePage() {
   const getFavoriteFeeds = useFavoritesStore(state => state.getFavoriteFeeds);
   const boundIsFavorite = useCallback((url: string) => isFavorite(url), [isFavorite]);
   const boundToggleFavorite = useCallback((url: string) => toggleFavorite(url), [toggleFavorite]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const filteredFeeds = useMemo(() => {
     const sourceFeeds = showFavoritesOnly ? { "Favorites": getFavoriteFeeds() } : categorizedFeeds;
     if (!searchQuery.trim()) {
@@ -186,7 +187,7 @@ export function HomePage() {
               )}
             </div>
             <div className="space-y-16 md:space-y-24">
-              <AnimatePresence mode="wait">
+              <AnimatePresence mode="sync">
                 {Object.keys(filteredFeeds).length > 0 ? (
                   Object.entries(filteredFeeds).map(([category, feeds]) => (
                     <LazySection
