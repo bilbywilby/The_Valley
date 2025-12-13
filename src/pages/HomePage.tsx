@@ -47,15 +47,14 @@ export function HomePage() {
   };
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 bg-gradient-mesh">
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-12 md:py-16">
-            {/* Header */}
-            <header className="text-center mb-10 animate-fade-in">
-              <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-gray-100 mb-2 tracking-tight">
-                LV Intelligence Feed Index
+            <header className="text-center mb-10 animate-fade-in backdrop-blur-xl bg-white/10 dark:bg-slate-900/20 border border-white/20 shadow-glass rounded-3xl p-8 md:p-12">
+              <h1 className="text-5xl sm:text-6xl font-extrabold text-gray-900 dark:text-gray-100 mb-2 tracking-tight">
+                LV Intelligence <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-emerald-600 bg-clip-text text-transparent">Feed Index</span>
               </h1>
-              <p className="text-lg text-gray-600 dark:text-gray-400">
+              <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400">
                 {totalFeeds}+ Categorized RSS/Atom Feeds for the Lehigh Valley Region
               </p>
               <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -68,31 +67,30 @@ export function HomePage() {
                     Download Full OPML
                   </Button>
               </div>
-              <div className="mt-6 p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-200 rounded-lg shadow-sm flex items-center justify-center gap-2 max-w-2xl mx-auto">
-                <Info className="h-5 w-5 flex-shrink-0" />
-                <p className="font-medium text-sm">
+              <div className="mt-6 p-3 bg-white/5 dark:bg-slate-900/30 backdrop-blur-md border border-white/20 shadow-glass rounded-2xl flex items-center justify-center gap-2 max-w-2xl mx-auto">
+                <Info className="h-5 w-5 flex-shrink-0 text-indigo-800 dark:text-indigo-200" />
+                <p className="font-medium text-sm text-indigo-800 dark:text-indigo-200">
                   This is an index only. Use "Copy URL" to subscribe to feeds in your RSS reader.
                 </p>
               </div>
             </header>
-            {/* Search Bar */}
             <div className="sticky top-4 z-50 mb-10">
-              <div className="relative max-w-2xl mx-auto">
-                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <div className="relative max-w-2xl mx-auto backdrop-blur-md bg-white/80 dark:bg-slate-800/60 border border-white/30 shadow-glass rounded-3xl overflow-hidden shadow-xl">
+                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                  <Input
                     ref={searchInputRef}
                     type="text"
                     placeholder={`Search ${totalFeeds}+ feeds... (e.g. "Police", "Allentown")`}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-10 py-3 h-12 text-base rounded-full shadow-lg dark:shadow-xl bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500"
+                    className="w-full pl-12 pr-10 py-3 h-12 text-base rounded-full bg-transparent border-none focus:ring-2 focus:ring-indigo-500"
                  />
                  {searchQuery.length > 0 && (
                     <Button
                         onClick={handleClearSearch}
                         variant="ghost"
                         size="sm"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full p-0"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full p-0"
                     >
                         <X className="h-4 w-4" />
                     </Button>
@@ -108,28 +106,33 @@ export function HomePage() {
                 </div>
               )}
             </div>
-            {/* Feed List */}
-            <div className="space-y-12">
+            <div className="space-y-16 md:space-y-24">
               <AnimatePresence>
                 {Object.keys(filteredFeeds).length > 0 ? (
                   Object.entries(filteredFeeds).map(([category, feeds]) => (
                     <motion.section
                       key={category}
                       id={category.replace(/\s+/g, '-').toLowerCase()}
-                      className="bg-white dark:bg-slate-800/50 p-4 sm:p-6 rounded-xl shadow-lg"
+                      className="backdrop-blur-md bg-white/70 dark:bg-slate-800/40 border border-white/20 shadow-glass p-6 md:p-8 rounded-3xl"
                       layout
-                      variants={containerVariants}
-                      initial="hidden"
-                      animate="visible"
+                      initial={{ opacity: 0, y: 50 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: "-100px" }}
+                      transition={{ duration: 0.6 }}
                     >
-                      <h2 className="text-2xl sm:text-3xl font-bold text-indigo-700 dark:text-indigo-400 border-b border-indigo-100 dark:border-indigo-900 pb-3 mb-6">
+                      <h2 className="text-3xl md:text-4xl font-display font-bold text-indigo-700 dark:text-indigo-400 border-b border-indigo-100 dark:border-indigo-900 pb-3 mb-6">
                         {category}
                       </h2>
-                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      <motion.div 
+                        className="grid gap-6 md:gap-8 sm:grid-cols-2 lg:grid-cols-3"
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="visible"
+                      >
                         {feeds.map((feed) => (
                           <FeedCard key={feed.url} feed={feed} />
                         ))}
-                      </div>
+                      </motion.div>
                     </motion.section>
                   ))
                 ) : (
@@ -146,7 +149,7 @@ export function HomePage() {
             </div>
           </div>
         </main>
-        <footer className="mt-12 py-6 border-t border-gray-200 dark:border-slate-800 text-center text-sm text-gray-500 dark:text-gray-400">
+        <footer className="mt-12 py-6 border-t border-white/20 dark:border-slate-800/50 text-center text-sm text-gray-500 dark:text-gray-400 bg-white/50 dark:bg-slate-900/20 backdrop-blur">
           Built with ❤️ at Cloudflare
         </footer>
         <Toaster richColors position="top-right" />
