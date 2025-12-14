@@ -80,46 +80,60 @@ export function HomePage() {
   const [isEditSheetOpen, setEditSheetOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const storageMode = usePrivacyStore(s => s.storageMode);
-const favoriteCount = useFavoritesStore(s => s.favoriteUrls.length);
-  const isFavorite = useFavoritesStore(s => s.isFavorite);
+  // Primitive selector for favorite URLs
+  const favoriteUrls = useFavoritesStore(s => s.favoriteUrls);
+  const favoriteCount = favoriteUrls.length;
+  // Primitive derivation to avoid non‑primitive selector issues
+  const isFavorite = useCallback(
+    (url: string) => favoriteUrls.includes(url),
+    [favoriteUrls]
+  );
   const toggleFavorite = useFavoritesStore(s => s.toggleFavorite);
-  const getFavoriteFeeds = useFavoritesStore(s => s.getFavoriteFeeds);
   const showFavoritesOnly = useFavoritesStore(s => s.showFavoritesOnly);
   const toggleShowFavoritesOnly = useFavoritesStore(s => s.toggleShowFavoritesOnly);
-  const loadFavorites = useFavoritesStore(s => s.loadFromStorage);
+
   const healthChecksEnabled = usePrivacyStore(s => s.healthChecksEnabled);
-const categorizedFeeds = useFeedsStore(s => s.categorizedFeeds);
-const stableCategorizedFeeds = useMemo(() => categorizedFeeds, [categorizedFeeds]);
-  const getFlatFeeds = useFeedsStore(s => s.getFlatFeeds);
-  const loadFeeds = useFeedsStore(s => s.loadFromStorage);
-  const checkHealth = useHealthStore(s => s.checkHealth);
-  const loadHealth = useHealthStore(s => s.loadFromStorage);
+  const categorizedFeeds = useFeedsStore(s => s.categorizedFeeds);
+  // Flatten all feeds into a single array for easier processing
+  const flatFeeds = useMemo<Feed[]>(() => Object.values(categorizedFeeds).flat(), [categorizedFeeds]);
+  // Derive the list of favorite feeds from the flat feed list
+  const favoriteFeeds = useMemo(() => flatFeeds.filter(feed => favoriteUrls.includes(feed.url)), [flatFeeds, favoriteUrls]);
+
+
+
+  // Total number of feeds derived from the flattened feed list
+  const totalFeedsCount = useMemo(() => flatFeeds.length, [flatFeeds]);
   const shortcutHandlers = {
     onSearchFocus: () => searchInputRef.current?.focus(),
     onEditOpen: () => setEditSheetOpen(true),
     onToggleFavorites: toggleShowFavoritesOnly,
   };
   useKeyboardShortcuts(shortcutHandlers);
+  // Only `storageMode` needs to trigger re‑load; store actions are stable
   useEffect(() => {
-    loadFeeds();
-    loadFavorites();
-    loadHealth();
-  }, [storageMode, loadFeeds, loadFavorites, loadHealth]);
+    // Imperative synchronous calls to Zustand actions
+    useFeedsStore.getState().loadFromStorage();
+    useFavoritesStore.getState().loadFromStorage();
+    useHealthStore.getState().loadFromStorage();
+  }, [storageMode]);
+  // `checkHealth` is a stable store action; omit it from deps
   useEffect(() => {
     if (healthChecksEnabled) {
-      const allUrls = getFlatFeeds().map(f => f.url);
+      const allUrls = flatFeeds.map(f => f.url);
       if (allUrls.length > 0) {
-        checkHealth(allUrls);
+        // Imperative synchronous health‑check action
+        useHealthStore.getState().checkHealth(allUrls);
       }
     }
-  }, [healthChecksEnabled, checkHealth, getFlatFeeds]);
-  const boundIsFavorite = useCallback((url: string) => isFavorite(url), [isFavorite]);
+  }, [healthChecksEnabled, flatFeeds]);
+  // `isFavorite` is already a stable callback, so we can use it directly
+  const boundIsFavorite = isFavorite;
   const boundToggleFavorite = useCallback((url: string) => toggleFavorite(url), [toggleFavorite]);
   const { paginatedResults, totalPages, searchResultCount } = useMemo(() => {
     if (!searchQuery.trim()) {
       return { paginatedResults: [], totalPages: 0, searchResultCount: 0 };
     }
-    const sourceFeeds = showFavoritesOnly ? getFavoriteFeeds() : getFlatFeeds();
+    const sourceFeeds = showFavoritesOnly ? favoriteFeeds : flatFeeds;
     const queryTokens = searchQuery.toLowerCase().split(' ').filter(Boolean);
     const scoredFeeds: ScoredFeed[] = [];
     sourceFeeds.forEach(feed => {
@@ -145,15 +159,14 @@ const stableCategorizedFeeds = useMemo(() => categorizedFeeds, [categorizedFeeds
       totalPages: pages,
       searchResultCount: total,
     };
-  }, [searchQuery, showFavoritesOnly, getFavoriteFeeds, getFlatFeeds, categorizedFeeds, currentPage]);
+  }, [searchQuery, showFavoritesOnly, favoriteFeeds, flatFeeds, categorizedFeeds, currentPage]);
   const categorizedAndFilteredFeeds = useMemo(() => {
     if (searchQuery.trim()) return {};
     if (showFavoritesOnly) {
-        return { "Favorites": getFavoriteFeeds() };
+        return { "Favorites": favoriteFeeds };
     }
     return categorizedFeeds;
-  }, [searchQuery, showFavoritesOnly, getFavoriteFeeds, categorizedFeeds]);
-  const totalFeedsCount = useFeedsStore(s => Object.values(s.categorizedFeeds).reduce((sum, cat) => sum + cat.length, 0));
+  }, [searchQuery, showFavoritesOnly, favoriteFeeds, categorizedFeeds]);
   const handleClearSearch = useCallback(() => {
     setSearchQuery("");
     searchInputRef.current?.focus();
