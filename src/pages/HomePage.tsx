@@ -20,7 +20,7 @@ import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { PrivacyBanner } from "@/components/PrivacyBanner";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { motion, AnimatePresence } from "framer-motion";
-import { useDebounce } from "react-use";
+
 type LazySectionProps = {
   category: string;
   feeds: any[];
@@ -104,8 +104,13 @@ export function HomePage() {
   const healthChecksEnabled = usePrivacyStore(s => s.healthChecksEnabled);
   const categorizedFeeds = useFeedsStore(s => s.categorizedFeeds);
   const isCheckingHealth = useHealthStore(s => s.isChecking);
-  useDebounce(() => setDebouncedSearchQuery(searchQuery), 300, [searchQuery]);
   const isSearching = searchQuery !== "" && searchQuery !== debouncedSearchQuery;
+
+  // Debounce search query updates (replaces removed useDebounce)
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchQuery(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
   const isFavorite = useCallback((url: string) => favoriteUrls.includes(url), [favoriteUrls]);
   const flatFeedsWithCategory = useMemo<FeedWithCategory[]>(() =>
     Object.entries(categorizedFeeds).flatMap(([category, feeds]) =>
