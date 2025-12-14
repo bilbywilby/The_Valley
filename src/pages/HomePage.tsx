@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback, forwardRef } from "react";
-import { Download, Search, Info, X, Settings, Edit3, Star } from "lucide-react";
+import { Download, Search, Info, X, Settings, Edit3, Star, FileText } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { generateAndDownloadOpml } from "@/lib/opml-generator";
+import { generateCsvDownload, FeedWithCategory } from "@/lib/csv-generator";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { usePrivacyStore } from "@/stores/usePrivacyStore";
 import { useFeedsStore, Feed } from "@/stores/useFeedsStore";
@@ -106,9 +107,12 @@ export function HomePage() {
   useDebounce(() => setDebouncedSearchQuery(searchQuery), 300, [searchQuery]);
   const isSearching = searchQuery !== "" && searchQuery !== debouncedSearchQuery;
   const isFavorite = useCallback((url: string) => favoriteUrls.includes(url), [favoriteUrls]);
-  const flatFeeds = useMemo<Feed[]>(() => Object.values(categorizedFeeds).flat(), [categorizedFeeds]);
-  const favoriteFeeds = useMemo(() => flatFeeds.filter(feed => favoriteUrls.includes(feed.url)), [flatFeeds, favoriteUrls]);
-  const totalFeedsCount = useMemo(() => flatFeeds.length, [flatFeeds]);
+  const flatFeedsWithCategory = useMemo<FeedWithCategory[]>(() =>
+    Object.entries(categorizedFeeds).flatMap(([category, feeds]) =>
+      feeds.map(feed => ({ ...feed, category }))
+    ), [categorizedFeeds]);
+  const favoriteFeeds = useMemo(() => flatFeedsWithCategory.filter(feed => favoriteUrls.includes(feed.url)), [flatFeedsWithCategory, favoriteUrls]);
+  const totalFeedsCount = useMemo(() => flatFeedsWithCategory.length, [flatFeedsWithCategory]);
   const shortcutHandlers = {
     onSearchFocus: () => searchInputRef.current?.focus(),
     onEditOpen: () => setEditSheetOpen(true),
@@ -122,30 +126,29 @@ export function HomePage() {
   }, [storageMode]);
   useEffect(() => {
     if (healthChecksEnabled) {
-      const allUrls = flatFeeds.map(f => f.url);
+      const allUrls = flatFeedsWithCategory.map(f => f.url);
       if (allUrls.length > 0) {
         useHealthStore.getState().checkHealth(allUrls);
       }
     }
-  }, [healthChecksEnabled, flatFeeds]);
+  }, [healthChecksEnabled, flatFeedsWithCategory]);
   const { paginatedResults, totalPages, searchResultCount } = useMemo(() => {
     if (!debouncedSearchQuery.trim()) {
       return { paginatedResults: [], totalPages: 0, searchResultCount: 0 };
     }
-    const sourceFeeds = showFavoritesOnly ? favoriteFeeds : flatFeeds;
+    const sourceFeeds = showFavoritesOnly ? favoriteFeeds : flatFeedsWithCategory;
     const queryTokens = debouncedSearchQuery.toLowerCase().split(' ').filter(Boolean);
     const scoredFeeds: ScoredFeed[] = [];
     sourceFeeds.forEach(feed => {
       let score = 0;
       const titleLower = feed.title.toLowerCase();
       const urlLower = feed.url.toLowerCase();
-      const category = Object.keys(categorizedFeeds).find(cat => categorizedFeeds[cat].some(f => f.url === feed.url)) || '';
       queryTokens.forEach(token => {
         if (titleLower.includes(token)) score += 2;
         if (urlLower.includes(token)) score += 1;
       });
       if (score > 0) {
-        scoredFeeds.push({ feed, category, score });
+        scoredFeeds.push({ feed, category: feed.category, score });
       }
     });
     scoredFeeds.sort((a, b) => b.score - a.score);
@@ -158,7 +161,7 @@ export function HomePage() {
       totalPages: pages,
       searchResultCount: total,
     };
-  }, [debouncedSearchQuery, showFavoritesOnly, favoriteFeeds, flatFeeds, categorizedFeeds, currentPage]);
+  }, [debouncedSearchQuery, showFavoritesOnly, favoriteFeeds, flatFeedsWithCategory, currentPage]);
   const categorizedAndFilteredFeeds = useMemo(() => {
     if (debouncedSearchQuery.trim()) return {};
     if (showFavoritesOnly) {
@@ -170,6 +173,41 @@ export function HomePage() {
     setSearchQuery("");
     searchInputRef.current?.focus();
   }, []);
+  const renderContent = () => {
+    if (isSearching || isCheckingHealth) {
+      return <SkeletonGrid />;
+    }
+    if (debouncedSearchQuery.trim()) {
+      if (paginatedResults.length > 0) {
+        return (
+          <>
+            <LazySection category="Search Results" feeds={paginatedResults} searchQuery={debouncedSearchQuery} isFavorite={isFavorite} onToggleFavorite={toggleFavorite} />
+            {totalPages > 1 && (
+              <Pagination className="mt-8">
+                <PaginationContent>
+                  <PaginationItem><PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(p => Math.max(1, p - 1)); }} /></PaginationItem>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <PaginationItem key={page}><PaginationLink href="#" isActive={currentPage === page} onClick={(e) => { e.preventDefault(); setCurrentPage(page); }}>{page}</PaginationLink></PaginationItem>
+                  ))}
+                  <PaginationItem><PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(p => Math.min(totalPages, p + 1)); }} /></PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
+          </>
+        );
+      }
+      return (
+        <div className="text-center py-16">
+          <p className="text-xl font-semibold text-gray-700 dark:text-gray-300">{showFavoritesOnly ? "No favorite feeds match your search." : `No feeds found for "${debouncedSearchQuery}"`}</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">{showFavoritesOnly && favoriteUrls.length === 0 ? "You haven't favorited any feeds yet." : "Try a different search term."}</p>
+        </div>
+      );
+    }
+    return Object.entries(categorizedAndFilteredFeeds).map(([category, feeds]) => (
+      feeds.length > 0 && <LazySection key={category} category={category} feeds={feeds} searchQuery={debouncedSearchQuery} isFavorite={isFavorite} onToggleFavorite={toggleFavorite} />
+    ));
+  };
+  const contentKey = isSearching || isCheckingHealth ? 'loading' : debouncedSearchQuery.trim() ? 'search' : 'categories';
   return (
     <AppLayout>
       <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
@@ -184,7 +222,10 @@ export function HomePage() {
               </p>
               <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
                  <Button onClick={generateAndDownloadOpml} className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500" size="lg">
-                    <Download className="mr-2 h-5 w-5" /> Download Full OPML
+                    <Download className="mr-2 h-5 w-5" /> Download OPML
+                  </Button>
+                  <Button onClick={() => generateCsvDownload(flatFeedsWithCategory)} size="lg" variant="outline" className="font-semibold shadow-sm hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500/50">
+                    <FileText className="mr-2 h-5 w-5" /> Download CSV
                   </Button>
                   <PWAInstallPrompt />
                   <TooltipProvider>
@@ -239,38 +280,10 @@ export function HomePage() {
               {debouncedSearchQuery && !isSearching && (<div className="text-center mt-1"><Badge variant="secondary">{searchResultCount} result{searchResultCount === 1 ? '' : 's'} found</Badge></div>)}
             </div>
             <div className="space-y-16 md:space-y-24">
-              <AnimatePresence mode="wait">
-                {isSearching || isCheckingHealth ? (
-                  <motion.div key="loading">
-                    <SkeletonGrid />
-                  </motion.div>
-                ) : debouncedSearchQuery.trim() ? (
-                  paginatedResults.length > 0 ? (
-                    <motion.div key="search-results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                      <LazySection category="Search Results" feeds={paginatedResults} searchQuery={debouncedSearchQuery} isFavorite={isFavorite} onToggleFavorite={toggleFavorite} />
-                      {totalPages > 1 && (
-                        <Pagination className="mt-8">
-                          <PaginationContent>
-                            <PaginationItem><PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(p => Math.max(1, p - 1)); }} /></PaginationItem>
-                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                              <PaginationItem key={page}><PaginationLink href="#" isActive={currentPage === page} onClick={(e) => { e.preventDefault(); setCurrentPage(page); }}>{page}</PaginationLink></PaginationItem>
-                            ))}
-                            <PaginationItem><PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(p => Math.min(totalPages, p + 1)); }} /></PaginationItem>
-                          </PaginationContent>
-                        </Pagination>
-                      )}
-                    </motion.div>
-                  ) : (
-                    <motion.div key="no-results" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-16">
-                      <p className="text-xl font-semibold text-gray-700 dark:text-gray-300">{showFavoritesOnly ? "No favorite feeds match your search." : `No feeds found for "${debouncedSearchQuery}"`}</p>
-                      <p className="text-gray-500 dark:text-gray-400 mt-2">{showFavoritesOnly && favoriteUrls.length === 0 ? "You haven't favorited any feeds yet." : "Try a different search term."}</p>
-                    </motion.div>
-                  )
-                ) : (
-                  Object.entries(categorizedAndFilteredFeeds).map(([category, feeds]) => (
-                    feeds.length > 0 && <LazySection key={category} category={category} feeds={feeds} searchQuery={debouncedSearchQuery} isFavorite={isFavorite} onToggleFavorite={toggleFavorite} />
-                  ))
-                )}
+              <AnimatePresence mode="popLayout">
+                <motion.div key={contentKey} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                  {renderContent()}
+                </motion.div>
               </AnimatePresence>
             </div>
           </div>

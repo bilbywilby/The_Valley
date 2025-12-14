@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { SidebarProvider, SidebarInset, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { useSwipeable } from "react-swipeable";
@@ -10,14 +10,20 @@ type AppLayoutProps = {
   contentClassName?: string;
 };
 function SwipableSidebarInset({ children, className }: { children: React.ReactNode; className?: string }) {
-  const { isOpen, openSidebar, closeSidebar } = useSidebar();
+  const sidebar = useSidebar();
+  const handleSwipedRight = useCallback(() => {
+    if (!sidebar.isOpen) {
+      sidebar.open();
+    }
+  }, [sidebar]);
+  const handleSwipedLeft = useCallback(() => {
+    if (sidebar.isOpen) {
+      sidebar.close();
+    }
+  }, [sidebar]);
   const handlers = useSwipeable({
-    onSwipedRight: () => {
-      if (!isOpen) openSidebar();
-    },
-    onSwipedLeft: () => {
-      if (isOpen) closeSidebar();
-    },
+    onSwipedRight: handleSwipedRight,
+    onSwipedLeft: handleSwipedLeft,
     trackMouse: true,
     preventScrollOnSwipe: true,
     swipeDuration: 500,
