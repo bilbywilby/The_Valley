@@ -7,10 +7,8 @@ export function useIntersectionObserver(
 ) {
   const { once = true, ...observerOptions } = options;
   // Memoize options to prevent re-creating the observer unnecessarily.
-  // By stringifying the options object, we get a stable primitive value for the dependency array.
-  const memoizedOptions = useMemo(() => {
-    return observerOptions;
-  }, [JSON.stringify(observerOptions)]); // eslint-disable-line react-hooks/exhaustive-deps
+  // A simple stringify is a stable way to handle object dependency.
+  const memoizedOptions = useMemo(() => observerOptions, [JSON.stringify(observerOptions)]);
   useEffect(() => {
     const element = ref.current;
     if (!element) return;

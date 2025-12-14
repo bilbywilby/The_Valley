@@ -10,7 +10,6 @@ import { useFeedsStore } from '@/stores/useFeedsStore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { cn } from '@/lib/utils';
-import { useShallow } from 'zustand/react/shallow';
 interface StickySearchProps {
   query: string;
   onQueryChange: (query: string) => void;
@@ -35,7 +34,7 @@ export function StickySearch({
   const [isVisible, setIsVisible] = useState(false);
   const [isMobileExpanded, setMobileExpanded] = useState(false);
   const isMobile = useIsMobile();
-  const categorizedFeeds = useFeedsStore(useShallow(s => s.categorizedFeeds));
+  const categorizedFeeds = useFeedsStore(s => s.categorizedFeeds);
   const categories = useMemo(() => Object.keys(categorizedFeeds), [categorizedFeeds]);
   useIntersectionObserver(searchRef, () => setIsVisible(true), {
     rootMargin: '-10% 0px -20% 0px',

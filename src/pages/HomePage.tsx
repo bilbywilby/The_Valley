@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback, forwardRef } from "react";
-import { Download, Search, Info, X, Settings, Edit3, Star, FileText } from "lucide-react";
+import { Download, Info, Settings, Edit3, FileText } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Toaster } from "@/components/ui/sonner";
 import { Badge } from "@/components/ui/badge";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
@@ -20,7 +19,7 @@ import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { PrivacyBanner } from "@/components/PrivacyBanner";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { motion, AnimatePresence } from "framer-motion";
-
+import { StickySearch } from "@/components/StickySearch";
 type LazySectionProps = {
   category: string;
   feeds: any[];
@@ -91,6 +90,7 @@ SkeletonGrid.displayName = 'SkeletonGrid';
 export function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 15;
   const [isPrivacySheetOpen, setPrivacySheetOpen] = useState(false);
@@ -105,18 +105,18 @@ export function HomePage() {
   const categorizedFeeds = useFeedsStore(s => s.categorizedFeeds);
   const isCheckingHealth = useHealthStore(s => s.isChecking);
   const isSearching = searchQuery !== "" && searchQuery !== debouncedSearchQuery;
-
-  // Debounce search query updates (replaces removed useDebounce)
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearchQuery(searchQuery), 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchQuery, selectedCategory, showFavoritesOnly]);
   const isFavorite = useCallback((url: string) => favoriteUrls.includes(url), [favoriteUrls]);
   const flatFeedsWithCategory = useMemo<FeedWithCategory[]>(() =>
     Object.entries(categorizedFeeds).flatMap(([category, feeds]) =>
       feeds.map(feed => ({ ...feed, category }))
     ), [categorizedFeeds]);
-  const favoriteFeeds = useMemo(() => flatFeedsWithCategory.filter(feed => favoriteUrls.includes(feed.url)), [flatFeedsWithCategory, favoriteUrls]);
   const totalFeedsCount = useMemo(() => flatFeedsWithCategory.length, [flatFeedsWithCategory]);
   const shortcutHandlers = {
     onSearchFocus: () => searchInputRef.current?.focus(),
@@ -137,11 +137,21 @@ export function HomePage() {
       }
     }
   }, [healthChecksEnabled, flatFeedsWithCategory]);
+  const categoryFilteredFeeds = useMemo(() =>
+    selectedCategory === 'All'
+      ? flatFeedsWithCategory
+      : flatFeedsWithCategory.filter(f => f.category === selectedCategory),
+    [selectedCategory, flatFeedsWithCategory]
+  );
+  const favoriteFeeds = useMemo(() =>
+    categoryFilteredFeeds.filter(feed => favoriteUrls.includes(feed.url)),
+    [categoryFilteredFeeds, favoriteUrls]
+  );
   const { paginatedResults, totalPages, searchResultCount } = useMemo(() => {
     if (!debouncedSearchQuery.trim()) {
       return { paginatedResults: [], totalPages: 0, searchResultCount: 0 };
     }
-    const sourceFeeds = showFavoritesOnly ? favoriteFeeds : flatFeedsWithCategory;
+    const sourceFeeds = showFavoritesOnly ? favoriteFeeds : categoryFilteredFeeds;
     const queryTokens = debouncedSearchQuery.toLowerCase().split(' ').filter(Boolean);
     const scoredFeeds: ScoredFeed[] = [];
     sourceFeeds.forEach(feed => {
@@ -166,18 +176,22 @@ export function HomePage() {
       totalPages: pages,
       searchResultCount: total,
     };
-  }, [debouncedSearchQuery, showFavoritesOnly, favoriteFeeds, flatFeedsWithCategory, currentPage]);
+  }, [debouncedSearchQuery, showFavoritesOnly, favoriteFeeds, categoryFilteredFeeds, currentPage]);
   const categorizedAndFilteredFeeds = useMemo(() => {
     if (debouncedSearchQuery.trim()) return {};
+    const source = showFavoritesOnly ? favoriteFeeds : categoryFilteredFeeds;
     if (showFavoritesOnly) {
-        return { "Favorites": favoriteFeeds };
+        return { "Favorites": source };
     }
-    return categorizedFeeds;
-  }, [debouncedSearchQuery, showFavoritesOnly, favoriteFeeds, categorizedFeeds]);
-  const handleClearSearch = useCallback(() => {
-    setSearchQuery("");
-    searchInputRef.current?.focus();
-  }, []);
+    // Re-group flat list back into categories
+    return source.reduce((acc, feed) => {
+        if (!acc[feed.category]) {
+            acc[feed.category] = [];
+        }
+        acc[feed.category].push(feed);
+        return acc;
+    }, {} as Record<string, FeedWithCategory[]>);
+  }, [debouncedSearchQuery, showFavoritesOnly, favoriteFeeds, categoryFilteredFeeds]);
   const renderContent = () => {
     if (isSearching || isCheckingHealth) {
       return <SkeletonGrid />;
@@ -213,6 +227,7 @@ export function HomePage() {
     ));
   };
   const contentKey = isSearching || isCheckingHealth ? 'loading' : debouncedSearchQuery.trim() ? 'search' : 'categories';
+  const resultsCount = debouncedSearchQuery.trim() ? searchResultCount : categoryFilteredFeeds.length;
   return (
     <AppLayout>
       <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
@@ -253,37 +268,17 @@ export function HomePage() {
               </div>
             </header>
             <PrivacyBanner />
-            <div id="search-section" role="search" className="sticky top-2 z-50 mb-8">
-              <div className="relative max-w-2xl mx-auto backdrop-blur-sm bg-white/90 dark:bg-slate-800/80 border border-gray-200/50 dark:border-slate-700/50 rounded-2xl shadow-lg p-2">
-                 <div className="flex flex-row items-center gap-2">
-                    <div className="relative flex-1">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Input ref={searchInputRef} type="text" placeholder={`Search ${totalFeedsCount}+ feeds...`} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-11 pr-10 h-11 text-base rounded-xl bg-transparent border-none focus:ring-2 focus:ring-indigo-500" aria-label="Search feeds" />
-                          </TooltipTrigger>
-                          <TooltipContent><p>Shortcut: <kbd className="font-sans bg-gray-200 dark:bg-slate-700 rounded px-1.5 py-0.5 text-xs">S</kbd></p></TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      {searchQuery.length > 0 && (<Button onClick={handleClearSearch} variant="ghost" size="sm" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full p-0 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500" aria-label="Clear search"><X className="h-4 w-4" /></Button>)}
-                    </div>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" onClick={toggleShowFavoritesOnly} className="flex items-center justify-center sm:justify-start gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700/50">
-                            <Star className={`h-5 w-5 transition-colors ${showFavoritesOnly ? 'text-yellow-500 fill-yellow-400' : 'text-muted-foreground'}`} />
-                            <span className="hidden sm:inline text-sm font-medium text-gray-700 dark:text-gray-300">Favorites</span>
-                            <Badge variant={showFavoritesOnly ? "default" : "secondary"}>{favoriteUrls.length}</Badge>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Shortcut: <kbd className="font-sans bg-gray-200 dark:bg-slate-700 rounded px-1.5 py-0.5 text-xs">F</kbd></p></TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                 </div>
-              </div>
-              {debouncedSearchQuery && !isSearching && (<div className="text-center mt-1"><Badge variant="secondary">{searchResultCount} result{searchResultCount === 1 ? '' : 's'} found</Badge></div>)}
-            </div>
+            <StickySearch
+              query={searchQuery}
+              onQueryChange={setSearchQuery}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              showFavoritesOnly={showFavoritesOnly}
+              onToggleFavorites={toggleShowFavoritesOnly}
+              favoriteCount={favoriteUrls.length}
+              resultsCount={resultsCount}
+            />
+            {debouncedSearchQuery && !isSearching && (<div className="text-center -mt-4 mb-4"><Badge variant="secondary">{searchResultCount} result{searchResultCount === 1 ? '' : 's'} found</Badge></div>)}
             <div className="space-y-16 md:space-y-24">
               <AnimatePresence mode="popLayout">
                 <motion.div key={contentKey} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
