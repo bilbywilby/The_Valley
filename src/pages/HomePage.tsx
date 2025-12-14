@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback, forwardRef } from "react";
-import { Download, Search, Info, X, Settings, Edit3, Star, Keyboard } from "lucide-react";
+import { Download, Search, Info, X, Settings, Edit3, Star } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,11 +14,12 @@ import { useFeedsStore, Feed } from "@/stores/useFeedsStore";
 import { useHealthStore } from "@/stores/useHealthStore";
 import { PrivacySettingsSheet } from "@/components/PrivacySettingsSheet";
 import { EditFeedsSheet } from "@/components/EditFeedsSheet";
-import { FeedCard } from "@/components/feed-card";
+import { FeedCard, FeedCardSkeleton } from "@/components/feed-card";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { PrivacyBanner } from "@/components/PrivacyBanner";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { motion, AnimatePresence } from "framer-motion";
+import { useDebounce } from "react-use";
 type LazySectionProps = {
   category: string;
   feeds: any[];
@@ -72,36 +73,41 @@ interface ScoredFeed {
   category: string;
   score: number;
 }
+const SkeletonGrid = React.memo(({ count = 6 }: { count?: number }) => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    transition={{ duration: 0.2 }}
+    className="grid gap-6 md:gap-8 sm:grid-cols-2 lg:grid-cols-3"
+  >
+    {Array.from({ length: count }).map((_, i) => (
+      <FeedCardSkeleton key={i} />
+    ))}
+  </motion.div>
+));
+SkeletonGrid.displayName = 'SkeletonGrid';
 export function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 15;
   const [isPrivacySheetOpen, setPrivacySheetOpen] = useState(false);
   const [isEditSheetOpen, setEditSheetOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const storageMode = usePrivacyStore(s => s.storageMode);
-  // Primitive selector for favorite URLs
   const favoriteUrls = useFavoritesStore(s => s.favoriteUrls);
-  const favoriteCount = favoriteUrls.length;
-  // Primitive derivation to avoid non‑primitive selector issues
-  const isFavorite = useCallback(
-    (url: string) => favoriteUrls.includes(url),
-    [favoriteUrls]
-  );
   const toggleFavorite = useFavoritesStore(s => s.toggleFavorite);
   const showFavoritesOnly = useFavoritesStore(s => s.showFavoritesOnly);
   const toggleShowFavoritesOnly = useFavoritesStore(s => s.toggleShowFavoritesOnly);
-
   const healthChecksEnabled = usePrivacyStore(s => s.healthChecksEnabled);
   const categorizedFeeds = useFeedsStore(s => s.categorizedFeeds);
-  // Flatten all feeds into a single array for easier processing
+  const isCheckingHealth = useHealthStore(s => s.isChecking);
+  useDebounce(() => setDebouncedSearchQuery(searchQuery), 300, [searchQuery]);
+  const isSearching = searchQuery !== "" && searchQuery !== debouncedSearchQuery;
+  const isFavorite = useCallback((url: string) => favoriteUrls.includes(url), [favoriteUrls]);
   const flatFeeds = useMemo<Feed[]>(() => Object.values(categorizedFeeds).flat(), [categorizedFeeds]);
-  // Derive the list of favorite feeds from the flat feed list
   const favoriteFeeds = useMemo(() => flatFeeds.filter(feed => favoriteUrls.includes(feed.url)), [flatFeeds, favoriteUrls]);
-
-
-
-  // Total number of feeds derived from the flattened feed list
   const totalFeedsCount = useMemo(() => flatFeeds.length, [flatFeeds]);
   const shortcutHandlers = {
     onSearchFocus: () => searchInputRef.current?.focus(),
@@ -109,32 +115,25 @@ export function HomePage() {
     onToggleFavorites: toggleShowFavoritesOnly,
   };
   useKeyboardShortcuts(shortcutHandlers);
-  // Only `storageMode` needs to trigger re‑load; store actions are stable
   useEffect(() => {
-    // Imperative synchronous calls to Zustand actions
     useFeedsStore.getState().loadFromStorage();
     useFavoritesStore.getState().loadFromStorage();
     useHealthStore.getState().loadFromStorage();
   }, [storageMode]);
-  // `checkHealth` is a stable store action; omit it from deps
   useEffect(() => {
     if (healthChecksEnabled) {
       const allUrls = flatFeeds.map(f => f.url);
       if (allUrls.length > 0) {
-        // Imperative synchronous health‑check action
         useHealthStore.getState().checkHealth(allUrls);
       }
     }
   }, [healthChecksEnabled, flatFeeds]);
-  // `isFavorite` is already a stable callback, so we can use it directly
-  const boundIsFavorite = isFavorite;
-  const boundToggleFavorite = useCallback((url: string) => toggleFavorite(url), [toggleFavorite]);
   const { paginatedResults, totalPages, searchResultCount } = useMemo(() => {
-    if (!searchQuery.trim()) {
+    if (!debouncedSearchQuery.trim()) {
       return { paginatedResults: [], totalPages: 0, searchResultCount: 0 };
     }
     const sourceFeeds = showFavoritesOnly ? favoriteFeeds : flatFeeds;
-    const queryTokens = searchQuery.toLowerCase().split(' ').filter(Boolean);
+    const queryTokens = debouncedSearchQuery.toLowerCase().split(' ').filter(Boolean);
     const scoredFeeds: ScoredFeed[] = [];
     sourceFeeds.forEach(feed => {
       let score = 0;
@@ -159,14 +158,14 @@ export function HomePage() {
       totalPages: pages,
       searchResultCount: total,
     };
-  }, [searchQuery, showFavoritesOnly, favoriteFeeds, flatFeeds, categorizedFeeds, currentPage]);
+  }, [debouncedSearchQuery, showFavoritesOnly, favoriteFeeds, flatFeeds, categorizedFeeds, currentPage]);
   const categorizedAndFilteredFeeds = useMemo(() => {
-    if (searchQuery.trim()) return {};
+    if (debouncedSearchQuery.trim()) return {};
     if (showFavoritesOnly) {
         return { "Favorites": favoriteFeeds };
     }
     return categorizedFeeds;
-  }, [searchQuery, showFavoritesOnly, favoriteFeeds, categorizedFeeds]);
+  }, [debouncedSearchQuery, showFavoritesOnly, favoriteFeeds, categorizedFeeds]);
   const handleClearSearch = useCallback(() => {
     setSearchQuery("");
     searchInputRef.current?.focus();
@@ -208,15 +207,15 @@ export function HomePage() {
               </div>
             </header>
             <PrivacyBanner />
-            <div id="search-section" role="search" className="sticky top-2 sm:top-[1.25rem] z-50 mb-8">
-              <div className="relative max-w-2xl mx-auto backdrop-blur-sm bg-white/90 dark:bg-slate-800/80 border border-gray-200/50 dark:border-slate-700/50 rounded-2xl shadow-lg p-3">
-                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div id="search-section" role="search" className="sticky top-2 z-50 mb-8">
+              <div className="relative max-w-2xl mx-auto backdrop-blur-sm bg-white/90 dark:bg-slate-800/80 border border-gray-200/50 dark:border-slate-700/50 rounded-2xl shadow-lg p-2">
+                 <div className="flex flex-row items-center gap-2">
                     <div className="relative flex-1">
                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Input ref={searchInputRef} type="text" placeholder={`Search ${totalFeedsCount}+ feeds...`} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-11 pr-10 h-11 py-2.5 text-base rounded-xl bg-transparent border-none focus:ring-2 focus:ring-indigo-500" aria-label="Search feeds" />
+                            <Input ref={searchInputRef} type="text" placeholder={`Search ${totalFeedsCount}+ feeds...`} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-11 pr-10 h-11 text-base rounded-xl bg-transparent border-none focus:ring-2 focus:ring-indigo-500" aria-label="Search feeds" />
                           </TooltipTrigger>
                           <TooltipContent><p>Shortcut: <kbd className="font-sans bg-gray-200 dark:bg-slate-700 rounded px-1.5 py-0.5 text-xs">S</kbd></p></TooltipContent>
                         </Tooltip>
@@ -228,8 +227,8 @@ export function HomePage() {
                         <TooltipTrigger asChild>
                           <Button variant="ghost" onClick={toggleShowFavoritesOnly} className="flex items-center justify-center sm:justify-start gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700/50">
                             <Star className={`h-5 w-5 transition-colors ${showFavoritesOnly ? 'text-yellow-500 fill-yellow-400' : 'text-muted-foreground'}`} />
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Favorites</span>
-                            <Badge variant={showFavoritesOnly ? "default" : "secondary"}>{favoriteCount}</Badge>
+                            <span className="hidden sm:inline text-sm font-medium text-gray-700 dark:text-gray-300">Favorites</span>
+                            <Badge variant={showFavoritesOnly ? "default" : "secondary"}>{favoriteUrls.length}</Badge>
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent><p>Shortcut: <kbd className="font-sans bg-gray-200 dark:bg-slate-700 rounded px-1.5 py-0.5 text-xs">F</kbd></p></TooltipContent>
@@ -237,14 +236,18 @@ export function HomePage() {
                     </TooltipProvider>
                  </div>
               </div>
-              {searchQuery && (<div className="text-center mt-1"><Badge variant="secondary">{searchResultCount} result{searchResultCount === 1 ? '' : 's'} found</Badge></div>)}
+              {debouncedSearchQuery && !isSearching && (<div className="text-center mt-1"><Badge variant="secondary">{searchResultCount} result{searchResultCount === 1 ? '' : 's'} found</Badge></div>)}
             </div>
             <div className="space-y-16 md:space-y-24">
-              <AnimatePresence mode="popLayout">
-                {searchQuery.trim() ? (
+              <AnimatePresence mode="wait">
+                {isSearching || isCheckingHealth ? (
+                  <motion.div key="loading">
+                    <SkeletonGrid />
+                  </motion.div>
+                ) : debouncedSearchQuery.trim() ? (
                   paginatedResults.length > 0 ? (
                     <motion.div key="search-results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                      <LazySection category="Search Results" feeds={paginatedResults} searchQuery={searchQuery} isFavorite={boundIsFavorite} onToggleFavorite={boundToggleFavorite} />
+                      <LazySection category="Search Results" feeds={paginatedResults} searchQuery={debouncedSearchQuery} isFavorite={isFavorite} onToggleFavorite={toggleFavorite} />
                       {totalPages > 1 && (
                         <Pagination className="mt-8">
                           <PaginationContent>
@@ -259,13 +262,13 @@ export function HomePage() {
                     </motion.div>
                   ) : (
                     <motion.div key="no-results" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-16">
-                      <p className="text-xl font-semibold text-gray-700 dark:text-gray-300">{showFavoritesOnly ? "No favorite feeds match your search." : `No feeds found for "${searchQuery}"`}</p>
-                      <p className="text-gray-500 dark:text-gray-400 mt-2">{showFavoritesOnly && favoriteCount === 0 ? "You haven't favorited any feeds yet." : "Try a different search term."}</p>
+                      <p className="text-xl font-semibold text-gray-700 dark:text-gray-300">{showFavoritesOnly ? "No favorite feeds match your search." : `No feeds found for "${debouncedSearchQuery}"`}</p>
+                      <p className="text-gray-500 dark:text-gray-400 mt-2">{showFavoritesOnly && favoriteUrls.length === 0 ? "You haven't favorited any feeds yet." : "Try a different search term."}</p>
                     </motion.div>
                   )
                 ) : (
                   Object.entries(categorizedAndFilteredFeeds).map(([category, feeds]) => (
-                    feeds.length > 0 && <LazySection key={category} category={category} feeds={feeds} searchQuery={searchQuery} isFavorite={boundIsFavorite} onToggleFavorite={boundToggleFavorite} />
+                    feeds.length > 0 && <LazySection key={category} category={category} feeds={feeds} searchQuery={debouncedSearchQuery} isFavorite={isFavorite} onToggleFavorite={toggleFavorite} />
                   ))
                 )}
               </AnimatePresence>

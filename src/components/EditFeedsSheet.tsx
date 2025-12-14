@@ -14,6 +14,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence } from 'framer-motion';
+const MotionSheetContent = motion(SheetContent);
 function SortableFeedItem({ feed, category, onDelete }: { feed: Feed; category: string; onDelete: (url: string) => void; }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: feed.url });
   const style = { transform: CSS.Transform.toString(transform), transition };
@@ -102,7 +103,13 @@ export function EditFeedsSheet({ open, onOpenChange }: { open: boolean; onOpenCh
   };
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex flex-col w-full sm:max-w-lg">
+      <MotionSheetContent
+        initial={{ x: '100%' }}
+        animate={{ x: 0 }}
+        exit={{ x: '100%' }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        className="flex flex-col w-full sm:max-w-lg"
+      >
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2 text-2xl">
             <Edit3 className="h-6 w-6 text-indigo-500" />
@@ -164,7 +171,7 @@ export function EditFeedsSheet({ open, onOpenChange }: { open: boolean; onOpenCh
         <SheetFooter>
           <SheetClose asChild><Button type="submit" className="w-full">Done</Button></SheetClose>
         </SheetFooter>
-      </SheetContent>
+      </MotionSheetContent>
     </Sheet>
   );
 }

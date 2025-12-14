@@ -2,6 +2,7 @@ import React, { useState, useCallback } from "react";
 import { Copy, Check, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { Feed } from "@/data/feeds";
@@ -117,5 +118,25 @@ export function FeedCard({ feed, searchQuery, isFavorite, onToggleFavorite, cate
         </CardContent>
       </Card>
     </motion.div>
+  );
+}
+export function FeedCardSkeleton() {
+  return (
+    <Card className="h-full backdrop-blur-sm bg-white/90 dark:bg-slate-800/80 border border-gray-200/50 dark:border-slate-700/50 shadow-sm">
+      <CardContent className="p-4 flex flex-col h-full">
+        <div className="flex items-start gap-2 mb-2">
+          <Skeleton className="h-4 w-4 rounded-full" />
+          <div className="space-y-2 flex-grow">
+            <Skeleton className="h-4 w-4/5" />
+            <Skeleton className="h-4 w-2/5" />
+          </div>
+        </div>
+        <Skeleton className="h-3 w-full mb-4" />
+        <div className="mt-auto flex items-center gap-2">
+          <Skeleton className="h-9 w-9 rounded-md" />
+          <Skeleton className="h-9 w-full rounded-md" />
+        </div>
+      </CardContent>
+    </Card>
   );
 }
