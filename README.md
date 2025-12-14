@@ -1,6 +1,6 @@
 # Lehigh Valley Master Intelligence Feed Index
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/bilbywilby/lehigh-valley-master-intelligence-feed-index)
 
 A professional, visually stunning, and high-performance digital directory for the Lehigh Valley Master Intelligence Feed. This application serves as a central index for over 140+ categorized RSS and Atom feeds relevant to the Lehigh Valley region. It transforms the raw data into an elegant, searchable, and interactive user interface featuring categorized sidebar navigation, real-time search filtering, one-click URL copying, and OPML export for easy import into RSS readers.
 
@@ -95,7 +95,7 @@ wrangler deploy
 
 For custom domains or advanced config, edit `wrangler.jsonc` (do not modify forbidden sections).
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/bilbywilby/lehigh-valley-master-intelligence-feed-index)
 
 ## Contributing
 
