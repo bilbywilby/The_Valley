@@ -13,6 +13,7 @@ import { useFeedsStore } from "@/stores/useFeedsStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useHealthStore } from "@/stores/useHealthStore";
 import { Badge } from "@/components/ui/badge";
+import { useShallow } from 'zustand/react/shallow';
 const categoryIcons: { [key: string]: React.ElementType } = {
   "News - Regional": Newspaper,
   "News - Local": Newspaper,
@@ -34,7 +35,7 @@ const categoryIcons: { [key: string]: React.ElementType } = {
   "Utilities / Infrastructure": Wrench,
 };
 export function AppSidebar(): JSX.Element {
-  const categorizedFeeds = useFeedsStore(s => s.categorizedFeeds);
+  const categorizedFeeds = useFeedsStore(useShallow(s => s.categorizedFeeds));
   const categories = Object.keys(categorizedFeeds);
   const favoritesCount = useFavoritesStore(state => state.favoriteUrls.length);
   const toggleShowFavoritesOnly = useFavoritesStore(state => state.toggleShowFavoritesOnly);

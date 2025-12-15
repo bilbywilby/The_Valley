@@ -20,6 +20,7 @@ import { PrivacyBanner } from "@/components/PrivacyBanner";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { motion, AnimatePresence } from "framer-motion";
 import { StickySearch } from "@/components/StickySearch";
+import { useShallow } from 'zustand/react/shallow';
 type LazySectionProps = {
   category: string;
   feeds: any[];
@@ -102,7 +103,7 @@ export function HomePage() {
   const showFavoritesOnly = useFavoritesStore(s => s.showFavoritesOnly);
   const toggleShowFavoritesOnly = useFavoritesStore(s => s.toggleShowFavoritesOnly);
   const healthChecksEnabled = usePrivacyStore(s => s.healthChecksEnabled);
-  const categorizedFeeds = useFeedsStore(s => s.categorizedFeeds);
+  const categorizedFeeds = useFeedsStore(useShallow(s => s.categorizedFeeds));
   const isCheckingHealth = useHealthStore(s => s.isChecking);
   const isSearching = searchQuery !== "" && searchQuery !== debouncedSearchQuery;
   useEffect(() => {
