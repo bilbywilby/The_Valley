@@ -46,7 +46,17 @@ export function FeedCard({ feed, searchQuery, isFavorite, onToggleFavorite, cate
     e.stopPropagation();
     navigator.clipboard.writeText(feed.url).then(() => {
       setCopied(true);
-      toast.success(`Copied URL for "${feed.title}"`);
+      toast.success(`Copied URL for "${feed.title}"`, {
+        description: (
+          <div className="text-xs mt-1">
+            <p>Paste into your RSS reader. Quick links:</p>
+            <a href={`https://feedly.com/i/subscription/feed/${encodeURIComponent(feed.url)}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Feedly</a>
+            {' | '}
+            <a href={`https://www.inoreader.com/feed/${encodeURIComponent(feed.url)}`} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Inoreader</a>
+          </div>
+        ),
+        duration: 5000,
+      });
       setTimeout(() => setCopied(false), 2000);
     }).catch(err => {
       console.error("Failed to copy URL: ", err);

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback, forwardRef } from "react";
-import { Download, Info, Settings, Edit3, FileText } from "lucide-react";
+import { Download, Info, Settings, Edit3, FileText, MessageCirclePlus } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
@@ -14,6 +14,7 @@ import { useFeedsStore, Feed } from "@/stores/useFeedsStore";
 import { useHealthStore } from "@/stores/useHealthStore";
 import { PrivacySettingsSheet } from "@/components/PrivacySettingsSheet";
 import { EditFeedsSheet } from "@/components/EditFeedsSheet";
+import { SuggestFeedSheet } from "@/components/SuggestFeedSheet";
 import { FeedCard, FeedCardSkeleton } from "@/components/feed-card";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { PrivacyBanner } from "@/components/PrivacyBanner";
@@ -96,6 +97,7 @@ export function HomePage() {
   const PAGE_SIZE = 15;
   const [isPrivacySheetOpen, setPrivacySheetOpen] = useState(false);
   const [isEditSheetOpen, setEditSheetOpen] = useState(false);
+  const [isSuggestSheetOpen, setSuggestSheetOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const storageMode = usePrivacyStore(s => s.storageMode);
   const favoriteUrls = useFavoritesStore(s => s.favoriteUrls);
@@ -255,6 +257,9 @@ export function HomePage() {
                     <FileText className="mr-2 h-5 w-5" /> Download CSV
                   </Button>
                   <PWAInstallPrompt />
+                  <Button onClick={() => setSuggestSheetOpen(true)} variant="outline" size="lg" className="font-semibold shadow-sm hover:shadow-md transition-all duration-200 transform hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500/50">
+                    <MessageCirclePlus className="mr-2 h-5 w-5" /> Suggest Feed
+                  </Button>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -295,12 +300,28 @@ export function HomePage() {
             </div>
           </div>
         </main>
-        <footer className="mt-12 py-6 border-t border-gray-200 dark:border-slate-700 text-center text-sm text-muted-foreground bg-white/80 dark:bg-slate-900/50 backdrop-blur-sm">
-          Built with ���️ at Cloudflare | Data is stored in your browser's {storageMode === 'local' ? 'persistent' : 'session'} storage.
+        <footer className="mt-12 py-8 border-t border-gray-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/50 backdrop-blur-sm text-sm text-muted-foreground">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="md:text-left">
+                <h4 className="font-semibold text-foreground mb-2">About</h4>
+                <p>Built with ❤️ at Cloudflare. This is a community-driven index of public RSS feeds for the Lehigh Valley region.</p>
+              </div>
+              <div className="md:text-center">
+                 <h4 className="font-semibold text-foreground mb-2">Data Sources</h4>
+                 <p>The initial feed list is sourced from the community-maintained <a href="https://github.com/lehighvalley-feeds/lv-intelligence-feed" target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">LV Intelligence Feed project</a>. You can export the current list via the OPML/CSV buttons above.</p>
+              </div>
+              <div className="md:text-right">
+                <h4 className="font-semibold text-foreground mb-2">Privacy</h4>
+                <p>Data is stored in your browser's {storageMode === 'local' ? 'persistent' : 'session'} storage. No tracking or analytics are used.</p>
+              </div>
+            </div>
+          </div>
         </footer>
         <Toaster richColors position="top-right" />
         <PrivacySettingsSheet open={isPrivacySheetOpen} onOpenChange={setPrivacySheetOpen} />
         <EditFeedsSheet open={isEditSheetOpen} onOpenChange={setEditSheetOpen} />
+        <SuggestFeedSheet open={isSuggestSheetOpen} onOpenChange={setSuggestSheetOpen} />
       </div>
     </AppLayout>
   );

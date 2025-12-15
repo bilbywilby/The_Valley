@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { CheckCircle2, XCircle, HelpCircle, Loader2 } from 'lucide-react';
 import { useHealthStore } from '@/stores/useHealthStore';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { formatDistanceToNow } from 'date-fns';
 interface HealthStatusIconProps {
   url: string;
 }
@@ -23,10 +24,25 @@ export function HealthStatusIcon({ url }: HealthStatusIconProps) {
     ? 'unknown'
     : entry.status;
   const { Icon, color, label } = statusConfig[status];
+  const lastChecked = useMemo(() => {
+    return entry?.timestamp ? `Last checked: ${formatDistanceToNow(new Date(entry.timestamp), { addSuffix: true })}` : '';
+  }, [entry]);
   const isClickable = status === 'unknown';
-  const handleInfoClick = () => {
+  const handleInfoClick = (e: React.MouseEvent | React.KeyboardEvent) => {
     if (isClickable) {
-      toast.info("LV Intelligence Feed Index: 140+ Categorized RSS/Atom Feeds for the Lehigh Valley Region.");
+      e.stopPropagation();
+      toast.info("Enable Feed Health Checks in Settings", {
+        description: "Opt-in to check if feed URLs are active. This sends URLs to a privacy-respecting Cloudflare Worker.",
+        action: {
+          label: "Settings",
+          onClick: () => {
+            // This is a bit of a hack, but a simple way to trigger the sheet
+            // A more robust solution might use a global event bus or Zustand state
+            const settingsButton = document.querySelector('[aria-label="Privacy settings"]') as HTMLElement;
+            settingsButton?.click();
+          },
+        },
+      });
     }
   };
   return (
@@ -38,12 +54,12 @@ export function HealthStatusIcon({ url }: HealthStatusIconProps) {
               'flex-shrink-0 transition-transform duration-200',
               isClickable && 'cursor-pointer hover:scale-110'
             )}
-            aria-label={`Feed status: ${label}${isClickable ? ' (click for app info)' : ''}`}
+            aria-label={`Feed status: ${label}${isClickable ? ' (click for info)' : ''}`}
             onClick={handleInfoClick}
             onKeyDown={(e) => {
               if (isClickable && (e.key === 'Enter' || e.key === ' ')) {
                 e.preventDefault();
-                handleInfoClick();
+                handleInfoClick(e);
               }
             }}
             role={isClickable ? 'button' : undefined}
@@ -53,7 +69,11 @@ export function HealthStatusIcon({ url }: HealthStatusIconProps) {
           </span>
         </TooltipTrigger>
         <TooltipContent>
-          <p>{label}</p>
+          <p className="text-center">
+            {label}
+            {lastChecked && <br />}
+            {lastChecked && <span className="text-xs text-muted-foreground">{lastChecked}</span>}
+          </p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
