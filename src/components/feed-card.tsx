@@ -86,7 +86,7 @@ export function FeedCard({ feed, searchQuery, isFavorite, onToggleFavorite, cate
               role="button"
               tabIndex={0}
               aria-label={`Open ${safeTitle} in new tab`}
-              className="group flex flex-col h-full backdrop-blur-sm bg-white/90 dark:bg-slate-800/80 border border-gray-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500"
+              className="group flex flex-col h-full backdrop-blur-sm bg-white/90 dark:bg-slate-800/80 border border-gray-200/50 dark:border-slate-700/50 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer focus-visible:ring-[3px] focus-visible:ring-offset-2 focus-visible:ring-indigo-500/50"
             >
               <CardContent className="p-4 flex flex-col flex-grow">
                 <div className="flex items-start gap-2 mb-1">
@@ -107,6 +107,7 @@ export function FeedCard({ feed, searchQuery, isFavorite, onToggleFavorite, cate
                           size="icon"
                           className="h-9 w-9 shrink-0 text-muted-foreground hover:text-yellow-500 transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-indigo-500"
                           aria-label={`Toggle ${isFavorite ? 'remove' : 'add'} "${safeTitle}" to favorites`}
+                          aria-pressed={isFavorite}
                         >
                           <Star className={`h-5 w-5 transition-all duration-200 ${isFavorite ? 'fill-yellow-400 text-yellow-500' : 'fill-transparent'}`} />
                         </Button>

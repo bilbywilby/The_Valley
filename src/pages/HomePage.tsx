@@ -194,8 +194,11 @@ export function HomePage() {
     }, {} as Record<string, FeedWithCategory[]>);
   }, [debouncedSearchQuery, showFavoritesOnly, favoriteFeeds, categoryFilteredFeeds]);
   const renderContent = () => {
-    if (isSearching || isCheckingHealth) {
-      return <SkeletonGrid />;
+    if (isCheckingHealth) {
+      return <SkeletonGrid count={9} />;
+    }
+    if (isSearching) {
+      return <SkeletonGrid count={9} />;
     }
     if (debouncedSearchQuery.trim()) {
       if (paginatedResults.length > 0) {
@@ -227,10 +230,13 @@ export function HomePage() {
       feeds.length > 0 && <LazySection key={category} category={category} feeds={feeds} searchQuery={debouncedSearchQuery} isFavorite={isFavorite} onToggleFavorite={toggleFavorite} />
     ));
   };
-  const contentKey = isSearching || isCheckingHealth ? 'loading' : debouncedSearchQuery.trim() ? 'search' : 'categories';
+  const contentKey = isCheckingHealth ? 'health-check' : isSearching ? 'searching' : debouncedSearchQuery.trim() ? 'search' : 'categories';
   const resultsCount = debouncedSearchQuery.trim() ? searchResultCount : categoryFilteredFeeds.length;
   return (
     <AppLayout>
+      <a href="#main-content" className="sr-only focus:not-sr-only absolute top-4 left-4 z-[100] bg-background px-4 py-2 rounded-lg shadow-lg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500">
+        Skip to main content
+      </a>
       <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
         <main id="main-content" role="main" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-12 md:py-16">
@@ -279,7 +285,7 @@ export function HomePage() {
               favoriteCount={favoriteUrls.length}
               resultsCount={resultsCount}
             />
-            {debouncedSearchQuery && !isSearching && (<div className="text-center -mt-4 mb-4"><Badge variant="secondary">{searchResultCount} result{searchResultCount === 1 ? '' : 's'} found</Badge></div>)}
+            {debouncedSearchQuery && !isSearching && (<div className="text-center -mt-4 mb-4" role="status"><Badge variant="secondary">{searchResultCount} result{searchResultCount === 1 ? '' : 's'} found</Badge></div>)}
             <div className="space-y-16 md:space-y-24">
               <AnimatePresence mode="popLayout">
                 <motion.div key={contentKey} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
@@ -290,7 +296,7 @@ export function HomePage() {
           </div>
         </main>
         <footer className="mt-12 py-6 border-t border-gray-200 dark:border-slate-700 text-center text-sm text-muted-foreground bg-white/80 dark:bg-slate-900/50 backdrop-blur-sm">
-          Built with ❤️ at Cloudflare | Data is stored in your browser's {storageMode === 'local' ? 'persistent' : 'session'} storage.
+          Built with ���️ at Cloudflare | Data is stored in your browser's {storageMode === 'local' ? 'persistent' : 'session'} storage.
         </footer>
         <Toaster richColors position="top-right" />
         <PrivacySettingsSheet open={isPrivacySheetOpen} onOpenChange={setPrivacySheetOpen} />

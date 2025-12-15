@@ -45,13 +45,11 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { motion, AnimatePresence } from 'framer-motion';
-
 // Motion variants
 const slideUpScaleVariants = {
   hidden: { y: 50, opacity: 0, scale: 0.95 },
   visible: { y: 0, opacity: 1, scale: 1 },
 };
-
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -59,12 +57,10 @@ const containerVariants = {
     transition: { staggerChildren: 0.1 },
   },
 };
-
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
   visible: { y: 0, opacity: 1 },
 };
-
 function SortableFeedItem({
   feed,
   category,
@@ -95,7 +91,7 @@ function SortableFeedItem({
         <button
           {...attributes}
           {...listeners}
-          className="cursor-grab touch-none p-1"
+          className="cursor-grab touch-none p-1 focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
         >
           <GripVertical className="h-4 w-4 text-muted-foreground" />
         </button>
@@ -117,7 +113,6 @@ function SortableFeedItem({
     </motion.div>
   );
 }
-
 export function EditFeedsSheet({
   open,
   onOpenChange,
@@ -135,16 +130,13 @@ export function EditFeedsSheet({
     importData,
     reorderFeeds,
   } = useFeedsStore();
-
   const [newCategory, setNewCategory] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(
     Object.keys(categorizedFeeds)[0] || ''
   );
   const [newFeedTitle, setNewFeedTitle] = useState('');
   const [newFeedUrl, setNewFeedUrl] = useState('');
-
   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
-
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
@@ -157,7 +149,6 @@ export function EditFeedsSheet({
       reorderFeeds(selectedCategory, oldIndex, newIndex);
     }
   };
-
   const handleAddCategory = () => {
     if (newCategory.trim()) {
       addCategory(newCategory.trim());
@@ -165,7 +156,6 @@ export function EditFeedsSheet({
       setNewCategory('');
     }
   };
-
   const handleAddFeed = () => {
     if (newFeedTitle.trim() && newFeedUrl.trim() && selectedCategory) {
       addFeed(selectedCategory, {
@@ -179,7 +169,6 @@ export function EditFeedsSheet({
       setNewFeedUrl('');
     }
   };
-
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -195,7 +184,6 @@ export function EditFeedsSheet({
       reader.readAsText(file);
     }
   };
-
   const handleExport = () => {
     const jsonData = exportData();
     const blob = new Blob([jsonData], { type: 'application/json' });
@@ -209,7 +197,6 @@ export function EditFeedsSheet({
     URL.revokeObjectURL(url);
     toast.success('Feeds exported successfully!');
   };
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex flex-col w-full sm:max-w-lg overflow-hidden">
@@ -223,7 +210,6 @@ export function EditFeedsSheet({
             automatically based on your privacy settings.
           </SheetDescription>
         </SheetHeader>
-
         <motion.div
           className="flex-1 overflow-hidden flex flex-col"
           variants={slideUpScaleVariants}
@@ -274,7 +260,6 @@ export function EditFeedsSheet({
                   ))}
                 </div>
               </motion.div>
-
               {/* Manage Feeds */}
               <motion.div
                 variants={itemVariants}
@@ -309,7 +294,7 @@ export function EditFeedsSheet({
                 <Button onClick={handleAddFeed} className="w-full">
                   <Plus className="h-4 w-4 mr-2" /> Add Feed
                 </Button>
-                <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
+                <div className="max-h-60 overflow-y-auto space-y-2 pr-2" role="list" aria-label={`Feeds in ${selectedCategory}`}>
                   <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}
@@ -338,7 +323,6 @@ export function EditFeedsSheet({
                   </DndContext>
                 </div>
               </motion.div>
-
               {/* Backup & Restore */}
               <motion.div
                 variants={itemVariants}
@@ -368,7 +352,6 @@ export function EditFeedsSheet({
               </motion.div>
             </motion.div>
           </div>
-
           <SheetFooter>
             <SheetClose asChild>
               <Button type="submit" className="w-full">
@@ -381,4 +364,3 @@ export function EditFeedsSheet({
     </Sheet>
   );
 }
-//
